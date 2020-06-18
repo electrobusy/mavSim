@@ -24,8 +24,8 @@ psi_i = 0*pi/180;
 
 [q0_i,q1_i,q2_i,q3_i] = Euler2Quat(phi_i,theta_i,psi_i);
 
-phi_f = 10*pi/180;
-theta_f = -10*pi/180;
+phi_f = 0*pi/180;
+theta_f = 0*pi/180;
 psi_f = 0*pi/180;
 
 [q0_f,q1_f,q2_f,q3_f] = Euler2Quat(phi_f,theta_f,psi_f);
@@ -60,7 +60,7 @@ Kp_xy = [0.4 0.4]';
 Kd_xy = [0.5 0.5]';
 Ki_xy = [0 0]';
 
-Kp_v = [1 1]';
+Kp_v = [-0.5 -0.5]';
 Kd_v = [-0.1 -0.1]';
 Ki_v = [0 0]';
 
@@ -109,21 +109,21 @@ for i = 2:numPts-1
 %     % -- compute controller:
 %     v_ref = Kp_xy.*e_pos(1:2,i) + Kd_xy.*de_pos(1:2,i) + Ki_xy.*ie_pos(1:2,i);
 %     
-    % --> 1) Velocity x-y - PID loop -- Pass to commanded angles
-    % -- error computation:
-    v_ref = [1 -1]';
-    v_e(:,i) = v_ref - vel(1:2);
-    
-    % -- computation of error integration and derivative:
-    dv_e(:,i) = (x(4:5,i) - x(4:5,i-1))/dt; 
-    iv_e(:,i) = iv_e(:,i-1) + (v_e(:,i) - v_e(:,i-1))*dt;
-    
-    % -- compute controller:
-    a_ref = Kp_v.*v_e(:,i) + Kd_v.*dv_e(:,i) + Ki_v.*iv_e(:,i);%  + v_e(:,i);
-    
-    phi_theta_ref(:,i) = [cos(psi), -sin(psi); sin(psi), cos(psi)]'*a_ref;
-    
-    [q0_ref,q1_ref,q2_ref,q3_ref] = Euler2Quat(phi_theta_ref(1,i), phi_theta_ref(2,i), psi_f);
+%     % --> 1) Velocity x-y - PID loop -- Pass to commanded angles
+%     % -- error computation:
+%     v_ref = [1 -1]';
+%     v_e(:,i) = v_ref - vel(1:2);
+%     
+%     % -- computation of error integration and derivative:
+%     dv_e(:,i) = (x(4:5,i) - x(4:5,i-1))/dt; 
+%     iv_e(:,i) = iv_e(:,i-1) + (v_e(:,i) - v_e(:,i-1))*dt;
+%     
+%     % -- compute controller:
+%     a_ref = Kp_v.*v_e(:,i) + Kd_v.*dv_e(:,i) + Ki_v.*iv_e(:,i) + v_e(:,i);
+%     
+%     phi_theta_ref(:,i) = [cos(psi), -sin(psi); sin(psi), cos(psi)]'*a_ref;
+%     
+    [q0_ref,q1_ref,q2_ref,q3_ref] = Euler2Quat(phi_f, theta_f, psi_f);
     
     % % --> 0) Angle - PID inner loop
     % -- error computation:
@@ -349,7 +349,7 @@ grid on
 % -- Velocity
 subplot(3,3,2);
 plot(t,x(4,:));
-line([t(1), t(end)], [v_ref(1) v_ref(1)], 'LineStyle', '-', 'Color', 'r');
+% line([t(1), t(end)], [v_ref(1) v_ref(1)], 'LineStyle', '-', 'Color', 'r');
 if optimal
     hold on;
     plot(solution.T(:,1),solution.X(:,4),'*');
@@ -390,7 +390,7 @@ grid on
 subplot(3,3,3);
 plot(t,phid*180/pi);
 hold on;
-plot(t,phi_theta_ref(1,:)*180/pi, 'LineStyle', '-', 'Color', 'r');
+plot(t,phi_f*180/pi, 'LineStyle', '-', 'Color', 'r');
 if optimal
     [phi, theta, psi] = Quat2Euler(solution.X(:,7),solution.X(:,8),solution.X(:,9),solution.X(:,10));
     [phiv, thetav, psiv] = Quat2Euler(xv(:,7),xv(:,8),xv(:,9),xv(:,10));
@@ -406,7 +406,7 @@ grid on
 subplot(3,3,6);
 plot(t,thetad*180/pi);
 hold on;
-plot(t,phi_theta_ref(2,:)*180/pi, 'LineStyle', '-', 'Color', 'r');
+plot(t,phi_f*180/pi, 'LineStyle', '-', 'Color', 'r');
 if optimal
     hold on;
     plot(solution.T(:,1),theta*180/pi,'*');
