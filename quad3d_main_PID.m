@@ -362,7 +362,7 @@ grid on
 
 subplot(3,3,5);
 plot(t,x(5,:));
-line([t(1), t(end)], [v_ref(2) v_ref(2)], 'LineStyle', '-', 'Color', 'r');
+% line([t(1), t(end)], [v_ref(2) v_ref(2)], 'LineStyle', '-', 'Color', 'r');
 if optimal
     hold on;
     plot(solution.T(:,1),solution.X(:,5),'*');
