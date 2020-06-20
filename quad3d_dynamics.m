@@ -1,13 +1,13 @@
-function ds = quad3d_dynamics(x,u)
+function ds = quad3d_dynamics(x,u,data)
 
 % Define inputs
 T = u(1);
 omega = u(2:4);
 
 % Parameters
-m = 0.38905;
-beta = 0.5;
-g = 9.81;
+m = data.m;
+beta = data.beta;
+g = data.g;
 
 % Define states
 % X = x(:,1:3); % Position vector
