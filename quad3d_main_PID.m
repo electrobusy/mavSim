@@ -23,7 +23,7 @@ psi_f = 0*pi/180;
 
 % -- initial and final state: 
 x_i = [0, 0, 0, 0, 0, 0, q0_i, q1_i, q2_i, q3_i]'; 
-x_ref = [-2, 2, 0, 0, 0, 0, q0_f, q1_f, q2_f, q3_f]'; % r_xy = [-4,4] m
+x_ref = [-20, -10, 0, 0, 0, 0, q0_f, q1_f, q2_f, q3_f]'; % r_xy = [-4,4] m
 
 % -- Operations: 
 Q_cmd_mat = @(q0, q1, q2, q3) [q0, -q1, -q2, -q3; q1, q0, -q3, q2; q2, q3, q0, -q1; q3, -q2, q1, q0];
@@ -35,7 +35,7 @@ data.g = 9.81;
 
 numStates = 10;
 numInputs = 4;
-
+d2r=pi/180;
 % -- simulation time
 T = 10; % [sec]
 dt = 0.01; % [sec]
@@ -81,7 +81,7 @@ Ki_quat = [0 0 0]';
 
 % - velocity loop:
 vel_loop = true;  
-Kp_v = [2 2]'; % [3 3]'; % comment is without feedforward term
+Kp_v = [20 20]'; % [3 3]'; % comment is without feedforward term
 Kd_v = [-0.1 -0.1]'; % [-0.4 -0.4]';
 Ki_v = [0 0]';
 
@@ -116,7 +116,7 @@ for i = 2:numPts-1
     
         % -- computation of error integration and derivative:
         de_pos(1:2,i) = vel(1:2); % from the system of equations of quadrotor: theta_dot = omega
-        ie_pos(1:2,i) = ie_pos(1:2,i-1) + (e_pos(1:2,i) - e_pos(1:2,i-1))*dt;
+        ie_pos(1:2,i) = ie_pos(1:2,i-1) + (e_pos(1:2,i))*dt;
     
         % -- compute controller:
         v_ref(:,i) = Kp_xy.*e_pos(1:2,i) + Kd_xy.*de_pos(1:2,i) + Ki_xy.*ie_pos(1:2,i);
@@ -135,13 +135,15 @@ for i = 2:numPts-1
     
         % Now, linearization around hover yields
         phi_theta_ref(:,i) = [sin(psi_f), -cos(psi_f); cos(psi_f), sin(psi_f)]*a_ref(:,i);
+        phi_theta_ref(phi_theta_ref>90)=90;
+        phi_theta_ref(phi_theta_ref<(-90))=-90; 
         % --- References: 
         % [paper - eq. 10] https://www.researchgate.net/publication/321448210_Quadrotor_trajectory_tracking_using_PID_cascade_control
         % [document - Page 10] https://repository.upenn.edu/cgi/viewcontent.cgi?article=1705&context=edissertations
         % ---------------
-        [q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i)] = Euler2Quat(phi_theta_ref(1,i), phi_theta_ref(2,i), psi_f);
+        [q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i)] = Euler2Quat(phi_theta_ref(1,i)*d2r, phi_theta_ref(2,i)*d2r, psi_f*d2r);
     else
-        [q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i)] = Euler2Quat(phi_f, theta_f, psi_f);
+        [q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i)] = Euler2Quat(phi_f*d2r, theta_f*d2r, psi_f*d2r);
     end
     
     % % --> 0) Angle - PID inner loop
@@ -161,7 +163,7 @@ for i = 2:numPts-1
     
     % -- computation of error integration and derivative:
     de_pos(3,i) = -vel(3);
-    ie_pos(3,i) = ie_pos(3,i-1) + (e_pos(3,i) - e_pos(3,i-1))*dt;
+    ie_pos(3,i) = ie_pos(3,i-1) + (e_pos(3,i))*dt;
     
     % -- compute controller:
     u_T(i) = Kp_z*e_pos(3,i) + Kd_z*de_pos(3,i) + Ki_z*ie_pos(3,i);
@@ -214,16 +216,16 @@ for i = 2:numPts-1
     
     % 7) State Saturation:
     [phi, theta, psi] = Quat2Euler(x(7,i+1),x(8,i+1),x(9,i+1),x(10,i+1));
-    if(phi > 20*pi/180)
-        phi = 20*pi/180;
-    elseif (phi < -20*pi/180)
-        phi = -20*pi/180;
+    if(phi > 90*pi/180)
+        phi = 90*pi/180;
+    elseif (phi < -90*pi/180)
+        phi = -90*pi/180;
     end
     
-    if(theta > 20*pi/180)
-        theta = 20*pi/180;
-    elseif (theta < -20*pi/180)
-        theta = -20*pi/180;
+    if(theta > 90*pi/180)
+        theta = 90*pi/180;
+    elseif (theta < -90*pi/180)
+        theta = -90*pi/180;
     end
     
     [q0,q1,q2,q3] = Euler2Quat(phi,theta,psi);
@@ -331,83 +333,83 @@ end
 xlabel('t [sec]')
 ylabel('\psi [deg]')
 grid on
-
-% -- Angles:
-figure(3); % clf;
-subplot(3,2,1);
-plot(t,x(7,:));
-hold on;
-plot(t,q_ref(1,:));
-xlabel('t [sec]')
-ylabel('q0 [-]')
-grid on
-
-subplot(3,2,2);
-plot(t,x(8,:));
-hold on;
-plot(t,q_ref(2,:));
-xlabel('t [sec]')
-ylabel('q1 [-]')
-grid on
-
-subplot(3,2,3);
-plot(t,x(9,:));
-hold on;
-plot(t,q_ref(3,:));
-xlabel('t [sec]')
-ylabel('q2 [-]')
-grid on
-
-subplot(3,2,4);
-plot(t,x(10,:));
-hold on;
-plot(t,q_ref(4,:));
-xlabel('t [sec]')
-ylabel('q3 [-]')
-grid on
-
-subplot(3,2,[5 6]);
-plot(t,sqrt(x(7,:).^2 + x(8,:).^2 + x(9,:).^2 + x(10,:).^2));
-hold on;
-plot(t,sqrt(q_ref(1,:).^2 + q_ref(2,:).^2 + q_ref(3,:).^2 + q_ref(4,:).^2));
-xlabel('t [sec]');
-ylabel('|q|');
-grid on;
-
-% -- Control inputs:
-figure(4); % clf;
-subplot(2,2,1);
-plot(t,u(1,:));
-xlabel('t [sec]')
-ylabel('T [N]')
-grid on
-
-subplot(2,2,2);
-plot(t,u(2,:));
-xlabel('t [sec]')
-ylabel('p [rad/s]')
-grid on
-
-subplot(2,2,3);
-plot(t,u(3,:));
-xlabel('t [sec]')
-ylabel('q [rad/s]')
-grid on
-
-subplot(2,2,4);
-plot(t,u(4,:));
-xlabel('t [sec]')
-ylabel('r [rad/s]')
-grid on
-
-figure(5);
-subplot(2,1,1);
-plot(t,a_ref(1,:));
-xlabel('t [sec]')
-ylabel('a_x [m/s^2]')
-grid on
-subplot(2,1,2);
-plot(t,a_ref(2,:));
-xlabel('t [sec]')
-ylabel('a_y [m/s^2]')
-grid on
+% 
+% % -- Angles:
+% figure(3); % clf;
+% subplot(3,2,1);
+% plot(t,x(7,:));
+% hold on;
+% plot(t,q_ref(1,:));
+% xlabel('t [sec]')
+% ylabel('q0 [-]')
+% grid on
+% 
+% subplot(3,2,2);
+% plot(t,x(8,:));
+% hold on;
+% plot(t,q_ref(2,:));
+% xlabel('t [sec]')
+% ylabel('q1 [-]')
+% grid on
+% 
+% subplot(3,2,3);
+% plot(t,x(9,:));
+% hold on;
+% plot(t,q_ref(3,:));
+% xlabel('t [sec]')
+% ylabel('q2 [-]')
+% grid on
+% 
+% subplot(3,2,4);
+% plot(t,x(10,:));
+% hold on;
+% plot(t,q_ref(4,:));
+% xlabel('t [sec]')
+% ylabel('q3 [-]')
+% grid on
+% 
+% subplot(3,2,[5 6]);
+% plot(t,sqrt(x(7,:).^2 + x(8,:).^2 + x(9,:).^2 + x(10,:).^2));
+% hold on;
+% plot(t,sqrt(q_ref(1,:).^2 + q_ref(2,:).^2 + q_ref(3,:).^2 + q_ref(4,:).^2));
+% xlabel('t [sec]');
+% ylabel('|q|');
+% grid on;
+% 
+% % -- Control inputs:
+% figure(4); % clf;
+% subplot(2,2,1);
+% plot(t,u(1,:));
+% xlabel('t [sec]')
+% ylabel('T [N]')
+% grid on
+% 
+% subplot(2,2,2);
+% plot(t,u(2,:));
+% xlabel('t [sec]')
+% ylabel('p [rad/s]')
+% grid on
+% 
+% subplot(2,2,3);
+% plot(t,u(3,:));
+% xlabel('t [sec]')
+% ylabel('q [rad/s]')
+% grid on
+% 
+% subplot(2,2,4);
+% plot(t,u(4,:));
+% xlabel('t [sec]')
+% ylabel('r [rad/s]')
+% grid on
+% 
+% figure(5);
+% subplot(2,1,1);
+% plot(t,a_ref(1,:));
+% xlabel('t [sec]')
+% ylabel('a_x [m/s^2]')
+% grid on
+% subplot(2,1,2);
+% plot(t,a_ref(2,:));
+% xlabel('t [sec]')
+% ylabel('a_y [m/s^2]')
+% grid on
