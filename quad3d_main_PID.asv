@@ -37,7 +37,7 @@ numStates = 10;
 numInputs = 4;
 
 % -- simulation time
-T = 2; % [sec]
+T = 4; % [sec]
 dt = 0.01; % [sec]
 numPts = floor(T/dt); % [-]
 t = linspace(0,T,numPts); % [sec]
@@ -95,7 +95,7 @@ x(:,1) = x_i;
 x(:,2) = x_i;
 
 if vel_loop
-    v_ref = [1*ones(1,numPts); 1*ones(1,numPts)];
+    v_ref = [2*ones(1,numPts); 0*ones(1,numPts)];
 else
     v_ref = zeros(2,numPts); 
 end
@@ -133,7 +133,7 @@ for i = 2:numPts-1
         a_ref(:,i) = Kp_v.*v_e(:,i) + Kd_v.*dv_e(:,i) + Ki_v.*iv_e(:,i) + v_e(:,i);
     
         % Now, linearization around hover yields
-        phi_theta_ref(:,i) = [sin(psi_f), -cos(psi_f); cos(psi_f), sin(psi_f)]*a_ref(:,i);
+        phi_theta_ref(:,i) = [sin(psi), -cos(psi); cos(psi_f), sin(psi_f)]*a_ref(:,i);
         % --- References: 
         % [paper - eq. 10] https://www.researchgate.net/publication/321448210_Quadrotor_trajectory_tracking_using_PID_cascade_control
         % [document - Page 10] https://repository.upenn.edu/cgi/viewcontent.cgi?article=1705&context=edissertations
@@ -142,15 +142,6 @@ for i = 2:numPts-1
     else
         [q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i)] = Euler2Quat(phi_f, theta_f, psi_f);
     end
-    
-    [phi_ref_i, theta_ref_i, psi_ref_i] = Quat2Euler(q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i));
-    
-    plot(t(i), phi_ref_i*180/pi, 'r+')
-    hold on;
-    plot(t(i), phi_theta_ref(1,i)*180/pi, 'gx');
-    hold on;
-    plot(t(i), phi*180/pi, 'bo')
-    hold on;
     
     % % --> 0) Angle - PID inner loop
     % -- error computation:
@@ -220,26 +211,26 @@ for i = 2:numPts-1
     x(9,i+1) = q2/sqrt(q0.^2 + q1.^2 + q2.^2 + q3.^2);
     x(10,i+1) = q3/sqrt(q0.^2 + q1.^2 + q2.^2 + q3.^2);
     
-%     % 7) State Saturation:
-%     [phi, theta, psi] = Quat2Euler(x(7,i+1),x(8,i+1),x(9,i+1),x(10,i+1));
-%     if(phi > 20*pi/180)
-%         phi = 20*pi/180;
-%     elseif (phi < -20*pi/180)
-%         phi = -20*pi/180;
-%     end
-%     
-%     if(theta > 20*pi/180)
-%         theta = 20*pi/180;
-%     elseif (theta < -20*pi/180)
-%         theta = -20*pi/180;
-%     end
-%     
-%     [q0,q1,q2,q3] = Euler2Quat(phi,theta,psi);
-%     
-%     x(7,i+1) = q0;
-%     x(8,i+1) = q1;
-%     x(9,i+1) = q2;
-%     x(10,i+1) = q3;
+    % 7) State Saturation:
+    [phi, theta, psi] = Quat2Euler(x(7,i+1),x(8,i+1),x(9,i+1),x(10,i+1));
+    if(phi > 20*pi/180)
+        phi = 20*pi/180;
+    elseif (phi < -20*pi/180)
+        phi = -20*pi/180;
+    end
+    
+    if(theta > 20*pi/180)
+        theta = 20*pi/180;
+    elseif (theta < -20*pi/180)
+        theta = -20*pi/180;
+    end
+    
+    [q0,q1,q2,q3] = Euler2Quat(phi,theta,psi);
+    
+    x(7,i+1) = q0;
+    x(8,i+1) = q1;
+    x(9,i+1) = q2;
+    x(10,i+1) = q3;
 end
 
 %% Plots
@@ -308,7 +299,7 @@ subplot(3,3,3);
 plot(t,phid*180/pi);
 hold on;
 if vel_loop
-    plot(t,phi_theta_ref(1,:)*180/pi, 'LineStyle', '-', 'Color', 'g');
+    plot(t,phi_theta_ref(1,:), 'LineStyle', '-', 'Color', 'g');
     hold on
     plot(t,phiref*180/pi, 'LineStyle', '-', 'Color', 'r');
 else
@@ -322,7 +313,7 @@ subplot(3,3,6);
 plot(t,thetad*180/pi);
 hold on;
 if vel_loop
-    plot(t,phi_theta_ref(2,:)*180/pi, 'LineStyle', '-', 'Color', 'g');
+    plot(t,phi_theta_ref(2,:), 'LineStyle', '-', 'Color', 'g');
     hold on
     plot(t,thetaref*180/pi, 'LineStyle', '-', 'Color', 'r');
 else
