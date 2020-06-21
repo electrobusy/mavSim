@@ -23,7 +23,7 @@ psi_f = 0*pi/180;
 
 % -- initial and final state: 
 x_i = [0, 0, 0, 0, 0, 0, q0_i, q1_i, q2_i, q3_i]'; 
-x_ref = [0, 0, 0, 0, 0, 0, q0_f, q1_f, q2_f, q3_f]'; % r_xy = [-4,4] m
+x_ref = [25, 0, 0, 0, 0, 0, q0_f, q1_f, q2_f, q3_f]'; % r_xy = [-25,25] m
 
 % -- Operations: 
 Q_cmd_mat = @(q0, q1, q2, q3) [q0, -q1, -q2, -q3; q1, q0, -q3, q2; q2, q3, q0, -q1; q3, -q2, q1, q0];
@@ -37,7 +37,7 @@ numStates = 10;
 numInputs = 4;
 
 % -- simulation time
-T = 2; % [sec]
+T = 15; % [sec]
 dt = 0.01; % [sec]
 numPts = floor(T/dt); % [-]
 t = linspace(0,T,numPts); % [sec]
@@ -85,7 +85,7 @@ Kd_v = [-0.1 -0.1]'; % [-0.4 -0.4]';
 Ki_v = [0 0]';
 
 % position loop:
-pos_loop = false; % NOTE: Set this to true after "vel_loop" is true. Otherwise, it will prompt an error!
+pos_loop = true; % NOTE: Set this to true after "vel_loop" is true. Otherwise, it will prompt an error!
 Kp_xy = [0.5 0.5]';
 Kd_xy = [0 0]';
 Ki_xy = [0 0]';
@@ -95,7 +95,7 @@ x(:,1) = x_i;
 x(:,2) = x_i;
 
 if vel_loop
-    v_ref = [1*ones(1,numPts); 1*ones(1,numPts)];
+    v_ref = [1*ones(1,numPts); 0*ones(1,numPts)];
 else
     v_ref = zeros(2,numPts); 
 end
@@ -133,7 +133,7 @@ for i = 2:numPts-1
         a_ref(:,i) = Kp_v.*v_e(:,i) + Kd_v.*dv_e(:,i) + Ki_v.*iv_e(:,i) + v_e(:,i);
     
         % Now, linearization around hover yields
-        phi_theta_ref(:,i) = [sin(psi_f), -cos(psi_f); cos(psi_f), sin(psi_f)]*a_ref(:,i);
+        phi_theta_ref(:,i) = [sin(psi_f), -cos(psi_f); cos(psi_f), sin(psi_f)]*a_ref(:,i)/data.g;
         % --- References: 
         % [paper - eq. 10] https://www.researchgate.net/publication/321448210_Quadrotor_trajectory_tracking_using_PID_cascade_control
         % [document - Page 10] https://repository.upenn.edu/cgi/viewcontent.cgi?article=1705&context=edissertations
@@ -145,11 +145,11 @@ for i = 2:numPts-1
     
     [phi_ref_i, theta_ref_i, psi_ref_i] = Quat2Euler(q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i));
     
-    plot(t(i), phi_ref_i*180/pi, 'r+')
+    plot(t(i), theta_ref_i*180/pi, 'r+')
     hold on;
-    plot(t(i), phi_theta_ref(1,i)*180/pi, 'gx');
+    plot(t(i), phi_theta_ref(2,i)*180/pi, 'gx');
     hold on;
-    plot(t(i), phi*180/pi, 'bo')
+    plot(t(i), theta*180/pi, 'bo')
     hold on;
     
     % % --> 0) Angle - PID inner loop
