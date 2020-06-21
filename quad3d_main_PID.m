@@ -23,7 +23,7 @@ psi_f = 0*pi/180;
 
 % -- initial and final state: 
 x_i = [0, 0, 0, 0, 0, 0, q0_i, q1_i, q2_i, q3_i]'; 
-x_ref = [-20, -10, 0, 0, 0, 0, q0_f, q1_f, q2_f, q3_f]'; % r_xy = [-4,4] m
+x_ref = [-8, 0, 0, 0, 0, 0, q0_f, q1_f, q2_f, q3_f]'; % r_xy = [-4,4] m
 
 % -- Operations: 
 Q_cmd_mat = @(q0, q1, q2, q3) [q0, -q1, -q2, -q3; q1, q0, -q3, q2; q2, q3, q0, -q1; q3, -q2, q1, q0];
@@ -35,9 +35,10 @@ data.g = 9.81;
 
 numStates = 10;
 numInputs = 4;
-d2r=pi/180;
+d2r = pi/180;
+
 % -- simulation time
-T = 10; % [sec]
+T = 5; % [sec]
 dt = 0.01; % [sec]
 numPts = floor(T/dt); % [-]
 t = linspace(0,T,numPts); % [sec]
@@ -81,7 +82,7 @@ Ki_quat = [0 0 0]';
 
 % - velocity loop:
 vel_loop = true;  
-Kp_v = [20 20]'; % [3 3]'; % comment is without feedforward term
+Kp_v = [50 20]'; % [3 3]'; % comment is without feedforward term
 Kd_v = [-0.1 -0.1]'; % [-0.4 -0.4]';
 Ki_v = [0 0]';
 
@@ -96,7 +97,7 @@ x(:,1) = x_i;
 x(:,2) = x_i;
 
 if vel_loop
-    v_ref = [2*ones(1,numPts); 0*ones(1,numPts)];
+    v_ref = [5*ones(1,numPts); 0*ones(1,numPts)];
 else
     v_ref = zeros(2,numPts); 
 end
@@ -128,23 +129,34 @@ for i = 2:numPts-1
         v_e(:,i) = v_ref(:,i) - vel(1:2);
         % -- computation of error integration and derivative:
         dv_e(:,i) = (x(4:5,i) - x(4:5,i-1))/dt; 
-        iv_e(:,i) = iv_e(:,i-1) + (v_e(:,i) - v_e(:,i-1))*dt;
+        iv_e(:,i) = iv_e(:,i-1) + v_e(:,i-1)*dt;
       
         % -- compute controller:
         a_ref(:,i) = Kp_v.*v_e(:,i) + Kd_v.*dv_e(:,i) + Ki_v.*iv_e(:,i) + v_e(:,i);
     
         % Now, linearization around hover yields
+        % phi_theta_ref(:,i) = [cos(psi) -sin(psi); sin(psi) cos(psi)]'*a_ref(:,i);
         phi_theta_ref(:,i) = [sin(psi_f), -cos(psi_f); cos(psi_f), sin(psi_f)]*a_ref(:,i);
-        phi_theta_ref(phi_theta_ref>90)=90;
-        phi_theta_ref(phi_theta_ref<(-90))=-90; 
+        phi_theta_ref(phi_theta_ref > 90) = 90;
+        phi_theta_ref(phi_theta_ref < -90) = -90;
+        phi_theta_ref = phi_theta_ref*d2r;
         % --- References: 
         % [paper - eq. 10] https://www.researchgate.net/publication/321448210_Quadrotor_trajectory_tracking_using_PID_cascade_control
         % [document - Page 10] https://repository.upenn.edu/cgi/viewcontent.cgi?article=1705&context=edissertations
         % ---------------
-        [q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i)] = Euler2Quat(phi_theta_ref(1,i)*d2r, phi_theta_ref(2,i)*d2r, psi_f*d2r);
+        [q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i)] = Euler2Quat(phi_theta_ref(1,i), phi_theta_ref(2,i), psi_f);
     else
-        [q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i)] = Euler2Quat(phi_f*d2r, theta_f*d2r, psi_f*d2r);
+        [q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i)] = Euler2Quat(phi_f, theta_f, psi_f);
     end
+    
+    [phi_ref_i, theta_ref_i, psi_ref_i] = Quat2Euler(q_ref(1,i),q_ref(2,i),q_ref(3,i),q_ref(4,i));
+    
+    plot(t(i), phi_theta_ref(2,i), 'gx');
+    hold on;
+    plot(t(i), theta_ref_i, 'r+')
+    hold on;
+    plot(t(i), theta, 'bo')
+    hold on;
     
     % % --> 0) Angle - PID inner loop
     % -- error computation:
@@ -152,7 +164,7 @@ for i = 2:numPts-1
     
     % -- computation of error integration and derivative:
     dq_e(:,i) = u_omega(:,i-1); 
-    iq_e(:,i) = iq_e(:,i-1) + (q_e(2:end,i) - q_e(2:end,i-1))*dt;
+    iq_e(:,i) = iq_e(:,i-1) + q_e(2:end,i-1)*dt;
     
     % -- compute controller:
     u_omega(:,i) = Kp_quat.*q_e(2:end,i) + Kd_quat.*dq_e(:,i) + Ki_quat.*iq_e(:,i);
@@ -216,16 +228,16 @@ for i = 2:numPts-1
     
     % 7) State Saturation:
     [phi, theta, psi] = Quat2Euler(x(7,i+1),x(8,i+1),x(9,i+1),x(10,i+1));
-    if(phi > 90*pi/180)
-        phi = 90*pi/180;
-    elseif (phi < -90*pi/180)
-        phi = -90*pi/180;
+    if(phi > 20*pi/180)
+        phi = 20*pi/180;
+    elseif (phi < -20*pi/180)
+        phi = -20*pi/180;
     end
     
-    if(theta > 90*pi/180)
-        theta = 90*pi/180;
-    elseif (theta < -90*pi/180)
-        theta = -90*pi/180;
+    if(theta > 20*pi/180)
+        theta = 20*pi/180;
+    elseif (theta < -20*pi/180)
+        theta = -20*pi/180;
     end
     
     [q0,q1,q2,q3] = Euler2Quat(phi,theta,psi);
