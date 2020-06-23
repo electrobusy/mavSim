@@ -100,6 +100,7 @@ else
     v_ref = zeros(2,numPts); 
 end
 
+%% 
 for i = 2:numPts-1
     
     pos = x(1:3,i);
@@ -220,26 +221,26 @@ for i = 2:numPts-1
     x(9,i+1) = q2/sqrt(q0.^2 + q1.^2 + q2.^2 + q3.^2);
     x(10,i+1) = q3/sqrt(q0.^2 + q1.^2 + q2.^2 + q3.^2);
     
-%     % 7) State Saturation:
-%     [phi, theta, psi] = Quat2Euler(x(7,i+1),x(8,i+1),x(9,i+1),x(10,i+1));
-%     if(phi > 20*pi/180)
-%         phi = 20*pi/180;
-%     elseif (phi < -20*pi/180)
-%         phi = -20*pi/180;
-%     end
-%     
-%     if(theta > 20*pi/180)
-%         theta = 20*pi/180;
-%     elseif (theta < -20*pi/180)
-%         theta = -20*pi/180;
-%     end
-%     
-%     [q0,q1,q2,q3] = Euler2Quat(phi,theta,psi);
-%     
-%     x(7,i+1) = q0;
-%     x(8,i+1) = q1;
-%     x(9,i+1) = q2;
-%     x(10,i+1) = q3;
+    % 7) State Saturation:
+    [phi, theta, psi] = Quat2Euler(x(7,i+1),x(8,i+1),x(9,i+1),x(10,i+1));
+    if(phi > 20*pi/180)
+        phi = 20*pi/180;
+    elseif (phi < -20*pi/180)
+        phi = -20*pi/180;
+    end
+    
+    if(theta > 20*pi/180)
+        theta = 20*pi/180;
+    elseif (theta < -20*pi/180)
+        theta = -20*pi/180;
+    end
+    
+    [q0,q1,q2,q3] = Euler2Quat(phi,theta,psi);
+    
+    x(7,i+1) = q0;
+    x(8,i+1) = q1;
+    x(9,i+1) = q2;
+    x(10,i+1) = q3;
 end
 
 %% Plots
@@ -269,7 +270,7 @@ grid on
 subplot(3,3,7);
 plot(t,x(3,:));
 line([t(1), t(end)], [x_ref(3) x_ref(3)], 'LineStyle', '-', 'Color', 'r');
-axis([t(1), t(end), -0.5, x_ref(3) + 0.5]);
+% axis([t(1), t(end), -0.5, x_ref(3) + 0.5]);
 xlabel('t [sec]')
 ylabel('z [m]')
 grid on
