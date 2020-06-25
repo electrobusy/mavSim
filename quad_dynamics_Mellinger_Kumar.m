@@ -30,17 +30,19 @@ z_W = [0, 0, 1]'; % z in the world frame.
 
 x_B = [ 
     cos(theta)*cos(psi); 
-    sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi); 
-    cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi)
-    ];
-y_B = [
     cos(theta)*sin(psi);
-    sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi);
-    cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi)
-    ];
-z_B = [
     -sin(theta);
-    sin(phi)*cos(theta);
+    ];
+
+y_B = [
+    sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi); 
+    sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi);
+    sin(phi)*cos(theta)
+    ];
+
+z_B = [
+    cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
+    cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);
     cos(phi)*cos(theta);
     ];
 
