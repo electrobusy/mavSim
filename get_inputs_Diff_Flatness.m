@@ -1,4 +1,23 @@
-function u = get_inputs_Diff_Flatness(coeffs,data)
+function [time,u] = get_inputs_Diff_Flatness(coeffs,data)
+    %$ this function calculates the required inputs to follow a polynomial
+    %trajectory
+    
+    %inputs:
+    %coeffs: polynomial coefficients
+    %dimension: 
+    %1=polynomial order 0-n
+    %2=state [x,y,z,psi]
+    %3=sections 
+    %4=derivative 0-k (not required, is calculated here from 0th derivative)
+    
+    %data: struct containing system parameters, m,g,L,I,k_f,k_m 
+    %---output: discretized time vector, inputs u, d
+    %dimensions: 
+    %1=input values,
+    %2=u1 ... u4 (collective thrust, moment_x,moment_y,moment_z
+    %3=section (valid for sections between waypoints)
+ 
+    %% temporary Parameters don't forget to remove when implementing function
     data.m = 0.38905;
     data.beta = 0.5;
     data.g = 9.81;    
@@ -7,7 +26,7 @@ function u = get_inputs_Diff_Flatness(coeffs,data)
     data.k_F=1.91e-6;
     data.k_M=2.6e-7;
 
-    % Parameters
+    
     % -- vehicle: 
     m = data.m; % [kg] quadrotor mass
     I = data.I; % [kg.m^2] quadrotor moment of inertia
@@ -19,21 +38,22 @@ function u = get_inputs_Diff_Flatness(coeffs,data)
     T=[0,2,3.4,5,9,10,11]; %placeholder t0 and t_end of each segment
     % placeholder polynomial
     nr_wp=length(T); %nr waypoints
-    nr_derivative=4;
+    nr_derivative=4; %how many derivatives (excluding 0th)
     nr_states=4;
     poly_order=5;
 
     %% build array with polynomial coefficients
+    %don't forget to remove coeffs
     coeffs=zeros(poly_order,nr_states,nr_wp-1,nr_derivative+1);
     coeffs(:,:,:,1)=randn(poly_order,nr_states,nr_wp-1,1); %polynomial coefficients [coefficientss,state (x,y,z,psi), nr sections,(nth-1 derivative)]
     multiplier=repmat((1:1:size(coeffs,1)-1)',[1,size(coeffs,[2,3])]); % used to multiply the coefficient with the corresponding power when differentiating
-    for n = 1:4
+    for n = 1:nr_derivative
     coeffs([1:size(coeffs,1)-1],:,:,n+1)=coeffs(2:size(coeffs,1),:,:,n).*multiplier; %calculate coefficients of derivatives and shift so that the index corresponds with power-1
     end
 
 
 
-    [t,out]=discretize_poly(coeffs,T,1e-2); % dimension out: [polynomial outputs for ti,state,section,derivative-1]
+    [time,out]=discretize_poly(coeffs,T,1e-2); % dimension out: [polynomial outputs for ti,state,section,derivative-1]
                                      %dimension t: [ti,power,section] 
 
     %% get u1 (collective thrust) 
@@ -99,7 +119,7 @@ function u = get_inputs_Diff_Flatness(coeffs,data)
             poly(:,:,s,d)=t(:,:,s)*coeffs(:,:,s,d);
         end
     end
-
+    t=t(:,1,:);
     end
 
 end
