@@ -46,7 +46,7 @@ z_B = [
     cos(phi)*cos(theta);
     ];
 
-% Direction cosine matrix (transformation matrix from Body to Euler)
+% Direction cosine matrix (transformation matrix from Body to World)
 R = [x_B, y_B, z_B];
 
 % Angular velocity in skew-symmetric matrix form (usefull, for instance, for doing cross product)

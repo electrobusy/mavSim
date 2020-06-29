@@ -1,3 +1,7 @@
+% MSc Student: Rohan Chotalal
+% Supervisors: Guido De Croon and Christophe D' Waghter
+% Faculty: Aerospace Engineering, TU Delft.
+
 function ds = quad3d_dynamics(x,u,data)
 
 % Define inputs
