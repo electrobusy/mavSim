@@ -58,16 +58,18 @@ d3_tim = jacobian(d2_tim,t)';
 d4_tim = jacobian(d3_tim,t)';
 
 A_eq = [
+    % waypoint constraints: sigma(t_i) = sigma_i
     double(subs(tim,t,t_vec(1)));
     double(subs(tim,t,t_vec(2)));
+    % derivatives (in the first and last waypoints) d^{p}sigma/dt^{p} = 0 (or free)
     double(subs(d_tim,t,t_vec(1)));
     double(subs(d2_tim,t,t_vec(1)));
-    double(subs(d3_tim,t,t_vec(1)));
-    double(subs(d4_tim,t,t_vec(1)));
+    % double(subs(d3_tim,t,t_vec(1)));
+    % double(subs(d4_tim,t,t_vec(1)));
     double(subs(d_tim,t,t_vec(2)));
     double(subs(d2_tim,t,t_vec(2)));
-    double(subs(d3_tim,t,t_vec(2)));
-    double(subs(d4_tim,t,t_vec(2)));
+    % double(subs(d3_tim,t,t_vec(2)));
+    % double(subs(d4_tim,t,t_vec(2)));
     ];
 
 b_eq = [
@@ -75,12 +77,12 @@ b_eq = [
     wps(2);
     0;
     0; 
+    % 0;
+    % 0;
     0;
     0;
-    0;
-    0;
-    0;
-    0;
+    % 0;
+    % 0;
     ];
 
 % -- Solves quadratic programming problem: 
@@ -91,39 +93,39 @@ sol = quadprog(H_arr,f,[],[],A_eq,b_eq);
 dt = 0.01;
 t = 0:dt:t_m;
 
-% -- [THIS IS NOT WORKING, NEEDS TO BE CORRECTED]
-pol_x = x.*sol';
-d_pol_x = dx.*sol(1:end-1)';
-dd_pol_x = ddx.*sol(1:end-2)';
-ddd_pol_x = dddx.*sol(1:end-3)';
-dddd_pol_x = ddddx.*sol(1:end-4)';
+% Convert polynomials in symbolic form to matlab functions: 
+tim_fun = matlabFunction(tim*sol);
+d_tim_fun = matlabFunction(d_tim*sol);
+d2_tim_fun = matlabFunction(d2_tim*sol);
+d3_tim_fun = matlabFunction(d3_tim*sol);
+d4_tim_fun = matlabFunction(d4_tim*sol);
 
 subplot(3,2,[1 2])
-plot(t,polyval(pol_x,t));
+plot(t,tim_fun(t));
 xlabel('t [sec]');
 ylabel('x [m]');
 grid on;
 
 subplot(3,2,3)
-plot(t,polyval(d_pol_x,t));
+plot(t,d_tim_fun(t));
 xlabel('t [sec]');
-ylabel('v_x [m]');
+ylabel('v_x [m/s]');
 grid on;
 
 subplot(3,2,4)
-plot(t,polyval(dd_pol_x,t));
+plot(t,d2_tim_fun(t));
 xlabel('t [sec]');
-ylabel('a_x [m]');
+ylabel('a_x [m/s^2]');
 grid on;
 
 subplot(3,2,5)
-plot(t,polyval(ddd_pol_x,t));
+plot(t,d3_tim_fun(t));
 xlabel('t [sec]');
-ylabel('j_x [m]');
+ylabel('j_x [m/s^3]');
 grid on;
 
 subplot(3,2,6)
-plot(t,polyval(dddd_pol_x,t));
+plot(t,d4_tim_fun(t));
 xlabel('t [sec]');
-ylabel('s_x [m]');
+ylabel('s_x [m/s^4]');
 grid on;

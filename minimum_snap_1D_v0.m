@@ -2,7 +2,7 @@
 % Supervisors: Guido De Croon and Christophe D' Waghter
 % Faculty: Aerospace Engineering, TU Delft.
 
-% Minimum snap algorithm (Mellinger and Kumar) - 1-D going from 1 Waypoint
+% Minimum Snap Algorithm (Mellinger and Kumar) - 1-D going from 1 Waypoint
 % to another using a 6-th order polynomial
 
 % clc,
@@ -107,25 +107,25 @@ grid on;
 subplot(3,2,3)
 plot(t,polyval(d_pol_x,t));
 xlabel('t [sec]');
-ylabel('v_x [m]');
+ylabel('v_x [m/s]');
 grid on;
 
 subplot(3,2,4)
 plot(t,polyval(dd_pol_x,t));
 xlabel('t [sec]');
-ylabel('a_x [m]');
+ylabel('a_x [m/s^2]');
 grid on;
 
 subplot(3,2,5)
 plot(t,polyval(ddd_pol_x,t));
 xlabel('t [sec]');
-ylabel('j_x [m]');
+ylabel('j_x [m/s^3]');
 grid on;
 
 subplot(3,2,6)
 plot(t,polyval(dddd_pol_x,t));
 xlabel('t [sec]');
-ylabel('s_x [m]');
+ylabel('s_x [m/s^4]');
 grid on;
 
 
