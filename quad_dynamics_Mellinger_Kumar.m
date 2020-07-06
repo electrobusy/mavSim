@@ -20,14 +20,19 @@ omega = states(10:12); % [rad/s] Angular velocity vector
 G = [
     k_F, k_F, k_F, k_F;
     0, k_F*L, 0, -k_F*L;
-    -k_K*L, 0, k_F*L, 0;
+    -k_F*L, 0, k_F*L, 0;
     k_M, -k_M, k_M, -k_M;
      ];
-u = G*controls;
+% u = G*controls; %shouldn't this be u=G*rotorspeeds? if rotorspeed was a
+% state 
+%for now it is assumed that the moments are achieved instantly:
+u=controls;
 
 % Unit vectors:
 z_W = [0, 0, 1]'; % z in the world frame. 
-
+phi=R(1);
+theta=R(2);
+psi=R(3);
 x_B = [ 
     cos(theta)*cos(psi); 
     cos(theta)*sin(psi);
@@ -60,7 +65,7 @@ omega_mat = [
 % -- Positions
 dX = V;
 % -- Angles
-dR = R*omega_mat; % R is the orientation
+dR = R*omega;%omega_mat; % R is the orientation
 % -- Velocities
 dV = (1/m)*(-m*g*z_W + u(1)*z_B);
 % -- Angular velocities

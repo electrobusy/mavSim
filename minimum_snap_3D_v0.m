@@ -5,9 +5,16 @@
 % Minimum Snap Algorithm (Mellinger and Kumar) - 3-D going from 1 Waypoint
 % to another using a 6-th order polynomial
 
+
+
 clc,
-clear all,
+% clear all,
 close all
+global plotflag
+if isempty(plotflag)
+    plotflag=1;
+end
+
 
 % -- keyframes = [x y z psi]' (where x, y, z and psi are column vectors)
 keyframes = [
@@ -258,8 +265,19 @@ dddd_pol_z = ddddz.*sol(2*n+3:3*n+3-4)';
 pol_psi = psi.*sol(3*n+4:4*n+4)';
 d_pol_psi = dpsi.*sol(3*n+4:4*n+4-1)';
 dd_pol_psi = ddpsi.*sol(3*n+4:4*n+4-2)';
+%% Get coefficients into right format for differential flatness function [coeffs,states,sections,derivatives]
+poly_coeffs=zeros(max([length(pol_x),length(pol_y),length(pol_z),length(pol_psi)]),4,m-1,5); 
 
+%x
+poly_coeffs=augment_arrays(poly_coeffs,pol_x,1,m-1,1);
+poly_coeffs=augment_arrays(poly_coeffs,pol_y,2,m-1,1);
+poly_coeffs=augment_arrays(poly_coeffs,pol_z,3,m-1,1);
+poly_coeffs=augment_arrays(poly_coeffs,pol_psi,4,m-1,1);
+
+
+%%
 % -- plot x
+if plotflag
 figure(1);
 subplot(3,2,[1 2])
 plot(t,polyval(pol_x,t));
@@ -394,4 +412,9 @@ grid on;
 for i = 1:m
     hold on;
     scatter3(keyframes(1,i),keyframes(2,i),keyframes(3,i),'ro');
+end
+end
+
+function coeffs = augment_arrays(coeffs,poly,statedim,sectiondim,derivativedim)
+    coeffs(1:length(poly),statedim,sectiondim,derivativedim)=poly;
 end

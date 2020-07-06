@@ -1,4 +1,4 @@
-function [time,u] = get_inputs_Diff_Flatness(coeffs,data)
+function [time,u, coeffs] = get_inputs_Diff_Flatness(coeffs,T,data)
     %$ this function calculates the required inputs to follow a polynomial
     %trajectory
     
@@ -17,14 +17,7 @@ function [time,u] = get_inputs_Diff_Flatness(coeffs,data)
     %2=u1 ... u4 (collective thrust, moment_x,moment_y,moment_z
     %3=section (valid for sections between waypoints)
  
-    %% temporary Parameters don't forget to remove when implementing function
-    data.m = 0.38905;
-    data.beta = 0.5;
-    data.g = 9.81;    
-    data.L=0.2;
-    data.I=diag([0.0049,0.0049,0.0069]); % kg m^2
-    data.k_F=1.91e-6;
-    data.k_M=2.6e-7;
+   
 
     
     % -- vehicle: 
@@ -35,7 +28,7 @@ function [time,u] = get_inputs_Diff_Flatness(coeffs,data)
     k_M = data.k_M; % [?] rotor moment coeficient
     % -- environment: 
     g = data.g; % [m/s^2] gravity
-    T=[0,2,3.4,5,9,10,11]; %placeholder t0 and t_end of each segment
+%     T=[0,2,3.4,5,9,10,11]; %placeholder t0 and t_end of each segment
     % placeholder polynomial
     nr_wp=length(T); %nr waypoints
     nr_derivative=4; %how many derivatives (excluding 0th)
@@ -44,8 +37,8 @@ function [time,u] = get_inputs_Diff_Flatness(coeffs,data)
 
     %% build array with polynomial coefficients
     %don't forget to remove coeffs
-    coeffs=zeros(poly_order,nr_states,nr_wp-1,nr_derivative+1);
-    coeffs(:,:,:,1)=randn(poly_order,nr_states,nr_wp-1,1); %polynomial coefficients [coefficientss,state (x,y,z,psi), nr sections,(nth-1 derivative)]
+%     coeffs=zeros(poly_order,nr_states,nr_wp-1,nr_derivative+1);
+%     coeffs(:,:,:,1)=randn(poly_order,nr_states,nr_wp-1,1); %polynomial coefficients [coefficientss,state (x,y,z,psi), nr sections,(nth-1 derivative)]
     multiplier=repmat((1:1:size(coeffs,1)-1)',[1,size(coeffs,[2,3])]); % used to multiply the coefficient with the corresponding power when differentiating
     for n = 1:nr_derivative
     coeffs([1:size(coeffs,1)-1],:,:,n+1)=coeffs(2:size(coeffs,1),:,:,n).*multiplier; %calculate coefficients of derivatives and shift so that the index corresponds with power-1
@@ -119,7 +112,7 @@ function [time,u] = get_inputs_Diff_Flatness(coeffs,data)
             poly(:,:,s,d)=t(:,:,s)*coeffs(:,:,s,d);
         end
     end
-    t=t(:,1,:);
+    t=t(:,2,:);
     end
 
 end

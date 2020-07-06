@@ -6,7 +6,7 @@
 % to another using a 6-th order polynomial
 
 % clc,
-% clear all,
+clear all,
 close all
 
 % -- keyframes = [x]'
