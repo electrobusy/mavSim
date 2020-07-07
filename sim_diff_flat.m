@@ -1,5 +1,8 @@
 %% get trajectory
+clear all
+
 plotflag=1;
+close all
 
 if not(exist('poly_coeffs','var'))
     minimum_snap_3D_v0;
@@ -15,7 +18,7 @@ clearvars -except poly_coeffs t_m keyframes
     data.I=diag([0.0049,0.0049,0.0069]); % kg m^2
     data.k_F=1.91e-6;
     data.k_M=2.6e-7;
-    
+    data.rotorcontrol=0;
 
 
 
@@ -32,11 +35,16 @@ statel=zeros(size(state,1),length(t)+1);
 statel(:,1)=state_0;
 for i=1:length(t)
     
-    ds=quad_dynamics_Mellinger_Kumar(state,u(i,:)',data);   
+%     ds=quad_dynamics_Mellinger_Kumar(state,u(i,:)',data);  
+    ds= quad_3D_Dynamics_Kumar_Jelle(state,u(i,:)',data);
     state=state+(ds*dt);
     statel(:,i+1)=state;
 end
 
 figure()
 plot3(statel(1,:),statel(2,:),-statel(3,:))
+xlabel('x')
+ylabel('y')
+zlabel('-z')
 grid on 
+axis equal
