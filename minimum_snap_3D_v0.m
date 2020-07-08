@@ -19,7 +19,7 @@ end
 % -- keyframes = [x y z psi]' (where x, y, z and psi are column vectors)
 keyframes = [
         0,0,0,0;
-        4,6,5,pi/2;
+        5,5,5,0.5*pi;
     ]';
 
 % -- number of keyframes: 
@@ -269,10 +269,10 @@ dd_pol_psi = ddpsi.*sol(3*n+4:4*n+4-2)';
 poly_coeffs=zeros(max([length(pol_x),length(pol_y),length(pol_z),length(pol_psi)]),4,m-1,5); 
 
 %x
-poly_coeffs=augment_arrays(poly_coeffs,pol_x,1,m-1,1);
-poly_coeffs=augment_arrays(poly_coeffs,pol_y,2,m-1,1);
-poly_coeffs=augment_arrays(poly_coeffs,pol_z,3,m-1,1);
-poly_coeffs=augment_arrays(poly_coeffs,pol_psi,4,m-1,1);
+poly_coeffs=augment_arrays(poly_coeffs,flip(pol_x),1,m-1,1);
+poly_coeffs=augment_arrays(poly_coeffs,flip(pol_y),2,m-1,1);
+poly_coeffs=augment_arrays(poly_coeffs,flip(pol_z),3,m-1,1);
+poly_coeffs=augment_arrays(poly_coeffs,flip(pol_psi),4,m-1,1); %flip because polyval assumes p=...a3x^3+a2x^2+a1x+a0 which is reverse of what the differential flatness code assumes
 
 
 %%

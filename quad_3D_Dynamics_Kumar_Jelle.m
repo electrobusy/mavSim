@@ -24,14 +24,14 @@ if data.rotorcontrol
         -data.k_F*data.L, 0 data.k_F*data.L, 0 ;
         data.k_M, -data.k_M, data.k_M, -data.k_M]*omega_rotor.^2; 
 else
-    u=input;       
+    u=input;
 end
 
 I=data.I; 
 
 dOmega=I^(-1)*(cross(-Omega,I*Omega)+u(2:4)); %rot acc in body frame
 domega=(Tbi')*dOmega; %rot acc in inertial frame 
-dTheta=omega;
+dTheta=omega; %dphi dtheta dpsi (p,q,r)
 
 dpos=vel; 
 dvel=(1/data.m)*([0;0;data.m*data.g]-(Teb*[0;0;u(1)])); %acceleration in world frame
