@@ -2,18 +2,18 @@ function R=symbolicrotation(angles,axorder,orientation,demo)
 %% this function produces the rotation matrix from a sequence of unit rotations
 % The orientation states whether it concerns a lefthanded or righthanded axis system
 % demo is for symbolic representation to check with paper
-% angles should be [phi theta psi] with the correct sign for the direction of rotation.
-
-% 
-% angles=[1,1,1]
+% angles should be like [ax, ay, az] regardless of what axorder is
+% pad angles with zeros if using less than 3 angles 
+% currently only works with 3 rotations or less 
+% angles
 % demo=1
 % orientation='righthanded';
 % axorder=[3 2 1]; %note that this order represents the order of angle rotations is the reverse of the matrix multiplication order
 if demo
 syms cphi sphi ctheta stheta cpsi spsi
 sphi=sign(angles(1))*sphi;
-stheta=sign(angles(1))*stheta;
-spsi=sign(angles(1))*spsi;
+stheta=sign(angles(2))*stheta;
+spsi=sign(angles(3))*spsi;
 else
     cphi=cos(angles(1));
     sphi=sin(angles(1));
@@ -77,5 +77,5 @@ R=eye(3);
 for i=flip(axorder) %should order be flipped? (according to flight dynamics course it should, but some papers don't seems to do it)
     R=R*unitrotmats(:,:,i);
 end
-R
+% R
 % end

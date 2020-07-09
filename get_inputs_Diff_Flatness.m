@@ -1,4 +1,4 @@
-function [time,u, coeffs,extra] = get_inputs_Diff_Flatness(coeffs,T,data)
+function [time,u, coeffs,extra,out] = get_inputs_Diff_Flatness(coeffs,T,data)
     %$ this function calculates the required inputs to follow a polynomial
     %trajectory
     
@@ -46,7 +46,7 @@ function [time,u, coeffs,extra] = get_inputs_Diff_Flatness(coeffs,T,data)
 
 
 
-    [time,out]=discretize_poly(coeffs,T,1e-2); % dimension out: [polynomial outputs for ti,state,section,derivative-1]
+    [time,out]=discretize_poly(coeffs,T,data.dt); % dimension out: [polynomial outputs for ti,state,section,derivative-1]
                                      %dimension t: [ti,power,section] 
 
     %% get u1 (collective thrust) 
@@ -68,9 +68,9 @@ function [time,u, coeffs,extra] = get_inputs_Diff_Flatness(coeffs,T,data)
     h_omega=(m./u1).*out(:,1:3,:,4)-(dot(z_b,out(:,1:3,:,4),2).*z_b);  %out(:,1:3,:,4) = a_dot = r_dot_dot_dot (jerk)
     p=dot(-h_omega,y_b,2); %roll rate 
     q=dot(h_omega,x_b,2); % pitch rate 
-    r=dot(out(:,4,:,2).*z_w,z_b,2);      % yaw rate, not sure if z_w is used correctly
+    r=dot(out(:,4,:,2).*z_w,z_b,2);      % yaw rate,gives different values than other method below
     omega_bw=[p,q,r];  %body angular rate 
-
+    
     a_dot_dot=out(:,1:3,:,5); %snap
     a_dot=out(:,1:3,:,4); %jerk 
     %% this is likely wrong: 
@@ -80,9 +80,15 @@ function [time,u, coeffs,extra] = get_inputs_Diff_Flatness(coeffs,T,data)
     p_dot=dot(-h_alpha,y_b,2); %roll acceleration 
     q_dot=dot(h_alpha,x_b,2); % pitch acceleration
     r_dot=dot(out(:,4,:,3).*z_w,z_b,2); %yaw acceleration
-    alpha_bw=[p_dot,q_dot,r_dot];
+    
+    psi_dot=out(:,4,:,2); %heading rate 
+    psi_dot_dot=out(:,4,:,3); %heading acc
+
     %% Different derivation of angulkar acceleration: from http://arxiv.org/abs/1712.02402 without drag terms
     c=u1./m;
+    gzw=zeros(size(z_b));
+    gzw(:,3)=data.g;
+    c2=dot(z_b,out(:,1:3,1,3)+gzw,2); %mindcheck
     c_dot=dot(z_b,a_dot,2);
     B1=c;
     C1=zeros(size(c));
@@ -92,24 +98,26 @@ function [time,u, coeffs,extra] = get_inputs_Diff_Flatness(coeffs,T,data)
     D2=dot(-y_b,a_dot,2);
     B3=dot(-y_c,z_b,2);
     C3=vecnorm(cross(y_c,z_b),2,2);
-    D3=r_dot.*dot(x_c,x_b,2);
+    D3=psi_dot.*dot(x_c,x_b,2);
     
-    
-    E1=dot(x_b,a_dot_dot,2)-2*c_dot.*q-c.*p.*r;
-    E2=dot(-y_b,a_dot_dot,2)-2*c_dot.*p+c.*q.*r;
-    E3=r_dot.*dot(x_c,x_b,2)+2*r.*r.*dot(x_c,y_b,2)-2*r.*q.*dot(x_c,z_b,2)-p.*q.*dot(y_c,y_b,2)-p.*r.*dot(y_c,z_b,2);
+    omega_x=(-B1.*C2.*D3+B1.*C3.*D2-B3.*C1.*D2+B3.*C2.*D1)./(A2.*(B1.*C3-B3.*C1));
+    omega_y=(-C1.*D3+C3.*D1)./(B1.*C3-B3.*C1);
+    omega_z=(B1.*D3-B3.*D1)./(B1.*C3-B3.*C1); %values of omega_x and omega_y are identical to kumar's method, but omega_z is different
+    E1=dot(x_b,a_dot_dot,2)-2*c_dot.*q-c.*p.*omega_z;
+    E2=dot(-y_b,a_dot_dot,2)-2*c_dot.*p+c.*q.*omega_z;
+    E3=psi_dot_dot.*dot(x_c,x_b,2)+2*psi_dot.*omega_z.*dot(x_c,y_b,2)-2*psi_dot.*q.*dot(x_c,z_b,2)-p.*q.*dot(y_c,y_b,2)-p.*omega_z.*dot(y_c,z_b,2);
     
     omega_x_dot=(-B1.*C2.*E3+B1.*C3.*E2-B3.*C1.*E2+B3.*C2.*E1)./(A2.*(B1.*C3-B3.*C1));
     omega_y_dot=(-C1.*E3+C3.*E1)./(B1.*C3-B3.*C1);
     omega_z_dot=(B1.*E3-B3.*E1)./(B1.*C3-B3.*C1);
-    alpha_bw=[omega_x_dot,omega_y_dot,omega_z_dot];
+    omega_dot=[omega_x_dot,omega_y_dot,omega_z_dot];
     %% Get u2...u4 from alpha_bw
     I=data.I'; %transpose because all vectors are horizontal (doesn't matter if I is diagonal ofcourse) 
-    term_1=zeros(size(alpha_bw)); % assigned for matrix multiplication of I and alpha_bw
-    term_2=zeros(size(alpha_bw)); % assigned for matrix multiplication of I and omega_bw
+    term_1=zeros(size(omega_dot)); % assigned for matrix multiplication of I and alpha_bw
+    term_2=zeros(size(omega_dot)); % assigned for matrix multiplication of I and omega_bw
     for i=1:size(term_1,1)
         for s =1:size(term_1,3)
-            term_1(i,:,s)=(I*alpha_bw(i,:,s)')';
+            term_1(i,:,s)=(I*omega_dot(i,:,s)')';
             term_2(i,:,s)=(I*omega_bw(i,:,s)')';
         end
     end
@@ -122,17 +130,10 @@ function [time,u, coeffs,extra] = get_inputs_Diff_Flatness(coeffs,T,data)
     extra.Rb=cat(2,reshape(x_b',3,1,size(x_b,1)),reshape(y_b',3,1,size(y_b,1)),reshape(z_b',3,1,size(z_b,1)));%orientation matrix
     extra.phi=atan2(extra.Rb(3,2,:),extra.Rb(3,3,:)); %from https://www.geometrictools.com/Documentation/EulerAngles.pdf
     extra.phi=reshape(extra.phi,size(extra.phi,3),1);
-    extra.theta=atan2(extra.Rb(3,1,:),sqrt(extra.Rb(3,2,:).^2+extra.Rb(3,3,:).^2));
+    extra.theta=atan2(-extra.Rb(3,1,:),sqrt(extra.Rb(3,2,:).^2+extra.Rb(3,3,:).^2));
     extra.theta=reshape(extra.theta,size(extra.theta,3),1);
     extra.psi=atan2(extra.Rb(2,1,:),extra.Rb(1,1,:));
     extra.psi=reshape(extra.psi,size(extra.psi,3),1);
-    
-    extra.p=p;
-    extra.q=q;
-    extra.r=r;
-    extra.p_dot=p_dot;
-    extra.q_dot=q_dot;
-    extra.r_dot=r_dot;
-    extra.alpha=alpha_bw;
-
+    extra.omega_dot=omega_dot; %body angular rates.
+    extra.omega=[omega_x,omega_y,omega_z];
 end
