@@ -19,7 +19,7 @@ end
 % -- keyframes = [x y z psi]' (where x, y, z and psi are column vectors)
 keyframes = [
         0,0,0,0;
-        100,10,10,0.25*pi;
+        100,50,10,0;
     ]';
     
 % -- number of keyframes: 
@@ -29,7 +29,7 @@ keyframes = [
 n = 6; % choose order 
 
 % -- total time: 
-t_m = 15; % [sec]
+t_m = 10; % [sec]
 
 % -- vector of times:
 t = [0, t_m]; % [t_0, t_1, ..., t_m]

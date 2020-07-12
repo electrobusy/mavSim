@@ -83,8 +83,11 @@ function [time,u, coeffs,extra,out] = get_inputs_Diff_Flatness(coeffs,T,data)
     
     psi_dot=out(:,4,:,2); %heading rate 
     psi_dot_dot=out(:,4,:,3); %heading acc
+    
+    %% Different derivation of thrust (includes drag terms)
+    alpha=out(:,1:3,:,3)
 
-    %% Different derivation of angulkar acceleration: from http://arxiv.org/abs/1712.02402 without drag terms
+    %% Different derivation of angular acceleration: from http://arxiv.org/abs/1712.02402 without drag terms
     c=u1./m;
     gzw=zeros(size(z_b));
     gzw(:,3)=data.g;
@@ -134,6 +137,7 @@ function [time,u, coeffs,extra,out] = get_inputs_Diff_Flatness(coeffs,T,data)
     extra.theta=reshape(extra.theta,size(extra.theta,3),1);
     extra.psi=atan2(extra.Rb(2,1,:),extra.Rb(1,1,:));
     extra.psi=reshape(extra.psi,size(extra.psi,3),1);
+    extra.psi2=atan2(x_c(:,2),x_c(:,1));
     extra.omega_dot=omega_dot; %body angular rates.
     extra.omega=[omega_x,omega_y,omega_z];
 end

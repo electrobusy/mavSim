@@ -49,7 +49,20 @@ R_des=[x_b_des,y_b_des,z_b_des]; %desired orientation
 %% Get desired body angular rate    
     omega_ref=data.omega;
     euler_des= [atan2(R_des(3,2),R_des(3,3)); atan2(-R_des(3,1),norm([R_des(3,2),R_des(3,3)],2)); atan2(R_des(2,1),R_des(1,1))];
-    omega_fb=data.K_theta*(Rb*(euler_des-state(4:6)));
+    euler_error=(euler_des-state(4:6));
+    if sum(euler_error(euler_error>pi))||(sum(euler_error(euler_error<-pi)))
+        dummy=2;
+    end
+    euler_error(euler_error>pi)=euler_error(euler_error>pi)-2*pi;
+    euler_error(euler_error<-pi)=euler_error(euler_error<-pi)+2*pi;
+    
+    %% using the inverse method of http://arxiv.org/abs/1712.02402 to convert from dTheta to domega
+    d_Theta_fb=data.K_theta*euler_error; 
+    d_Theta_skew=[0, -d_Theta_fb(3), d_Theta_fb(2);
+                  d_Theta_fb(3), 0, -d_Theta_fb(1);
+                  -d_Theta_fb(2), d_Theta_fb(1),0];
+    omega_fb_skew=Rb'*d_Theta_skew;
+    omega_fb=[omega_fb_skew(3,2);omega_fb_skew(1,3);omega_fb_skew(2,1)];
     omega_des=omega_ref+omega_fb;
     extra.omega_des=omega_des;
     extra.euler_des=euler_des;
