@@ -29,7 +29,7 @@ keyframes = [
 n = 6; % choose order 
 
 % -- total time: 
-t_m = 10; % [sec]
+t_m = 15; % [sec]
 
 % -- vector of times:
 t = [0, t_m]; % [t_0, t_1, ..., t_m]

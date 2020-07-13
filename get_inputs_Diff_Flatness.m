@@ -85,7 +85,7 @@ function [time,u, coeffs,extra,out] = get_inputs_Diff_Flatness(coeffs,T,data)
     psi_dot_dot=out(:,4,:,3); %heading acc
     
     %% Different derivation of thrust (includes drag terms)
-    alpha=out(:,1:3,:,3)
+    alpha=out(:,1:3,:,3);
 
     %% Different derivation of angular acceleration: from http://arxiv.org/abs/1712.02402 without drag terms
     c=u1./m;
@@ -106,9 +106,9 @@ function [time,u, coeffs,extra,out] = get_inputs_Diff_Flatness(coeffs,T,data)
     omega_x=(-B1.*C2.*D3+B1.*C3.*D2-B3.*C1.*D2+B3.*C2.*D1)./(A2.*(B1.*C3-B3.*C1));
     omega_y=(-C1.*D3+C3.*D1)./(B1.*C3-B3.*C1);
     omega_z=(B1.*D3-B3.*D1)./(B1.*C3-B3.*C1); %values of omega_x and omega_y are identical to kumar's method, but omega_z is different
-    E1=dot(x_b,a_dot_dot,2)-2*c_dot.*q-c.*p.*omega_z;
-    E2=dot(-y_b,a_dot_dot,2)-2*c_dot.*p+c.*q.*omega_z;
-    E3=psi_dot_dot.*dot(x_c,x_b,2)+2*psi_dot.*omega_z.*dot(x_c,y_b,2)-2*psi_dot.*q.*dot(x_c,z_b,2)-p.*q.*dot(y_c,y_b,2)-p.*omega_z.*dot(y_c,z_b,2);
+    E1=dot(x_b,a_dot_dot,2)-2*c_dot.*omega_y-c.*omega_x.*omega_z;
+    E2=dot(-y_b,a_dot_dot,2)-2*c_dot.*omega_x+c.*omega_y.*omega_z;
+    E3=psi_dot_dot.*dot(x_c,x_b,2)+2*psi_dot.*omega_z.*dot(x_c,y_b,2)-2*psi_dot.*omega_y.*dot(x_c,z_b,2)-omega_x.*omega_y.*dot(y_c,y_b,2)-omega_x.*omega_z.*dot(y_c,z_b,2);
     
     omega_x_dot=(-B1.*C2.*E3+B1.*C3.*E2-B3.*C1.*E2+B3.*C2.*E1)./(A2.*(B1.*C3-B3.*C1));
     omega_y_dot=(-C1.*E3+C3.*E1)./(B1.*C3-B3.*C1);
