@@ -140,4 +140,30 @@ function [time,u, coeffs,extra,out] = get_inputs_Diff_Flatness(coeffs,T,data)
     extra.psi2=atan2(x_c(:,2),x_c(:,1));
     extra.omega_dot=omega_dot; %body angular rates.
     extra.omega=[omega_x,omega_y,omega_z];
+    
+    
+    %% write coefficients to file
+    nr_section=size(coeffs,3);
+    nr_coeffs=size(coeffs,1);
+    nr_states=size(coeffs,2);
+    nr_derivatives=size(coeffs,4);
+    coeffile=fopen("coeffcients.txt",'wt');
+    
+    for sect = 1:nr_section
+        for state= 1:nr_states
+            for d=1:nr_derivatives
+                for c=1:nr_coeffs
+                    if c<nr_coeffs
+                        fprintf(coeffile,"%.9f, ",coeffs(c,state,sect,d));
+                    else
+                        fprintf(coeffile,"%.9f\n",coeffs(c,state,sect,d));
+                    end
+                end
+            end
+            fprintf(coeffile,"\n");
+        end
+    end
+    
+    
+    
 end

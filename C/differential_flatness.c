@@ -1,8 +1,9 @@
 
-#include<stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "differential_flatness.h"
 
-
+#define LOG 
 struct poly_coeff poly_coeff_x = {
     {0,0,0,0.296296296445966,-0.0296296296495693,0.000790123457588112,-5.88608758630694e-15}, //x
     {0,0,0.888888889337897,-0.118518518598277,0.00395061728794056,-3.53165255178416e-14,0},  //dx
@@ -12,7 +13,7 @@ struct poly_coeff poly_coeff_x = {
 } ;
 
 struct poly_coeff poly_coeff_y = {
-    {0,0,0,0.148148148223096,1-0.0148148148247847,0.000395061728794061,-2.94313291698298e-15}, //y
+    {0,0,0,0.148148148223096,-0.0148148148247847,0.000395061728794061,-2.94313291698298e-15}, //y
     {0,0,0.444444444669289,-0.0592592592991389,0.00197530864397030,-1.76587975018979e-14,0},  //dy
     {0,0.888888889338579,-0.177777777897417,0.00790123457588121,-8.82939875094893e-14,0,0},   //ddy
     {0.888888889338579,-0.355555555794833,0.0237037037276436,-3.53175950037957e-13,0,0,0},   //dddy
@@ -40,6 +41,7 @@ struct discretized_poly y_disc;
 struct discretized_poly z_disc;
 struct discretized_poly psi_disc;
 
+
 float t[3];
 float tt;
 float B1;
@@ -64,7 +66,7 @@ float E3;
 
 float omega[3];
 float omega_dot[3];
-
+float coefx[5][7];
 float term1[3];
 float term2[3];
 float term3[3];
@@ -85,8 +87,35 @@ float y_c_negative[3];
 float y_c[3];
 float u[4][DISCSIZE];
 float psi;
+
+
 int main(){
-    
+    #ifdef LOG
+    FILE * inputfile;
+    FILE * discfile;
+    inputfile = fopen("u_diff.txt","w");
+    discfile = fopen("discretize_traject.txt","w");
+    fprintf(inputfile,"Thrust [N], tau_x [Nm], tau_y [Nm], tau_z [Nm]\n");
+    fprintf(discfile,"t, x, dx, ddx, dddx, ddddx,");
+    fprintf(discfile," y, dy, ddy, dddy, ddddy,");
+    fprintf(discfile," z, dz, ddz, dddz, ddddz,");
+    fprintf(discfile," psi, dpsi, ddpsi, dddpsi, ddddpsi\n");
+    #endif
+
+    // FILE * coeffile;
+    // coeffile=fopen("coeffcients.txt","r");
+    // int q = 0;
+
+    // fscanf (coeffile, "%c", &q);    
+    // while (!feof (coeffile))
+    //     {  
+    //     printf ("%c ", q);
+    //     fscanf (coeffile, "%c", &q);      
+    //     }
+    // fclose (coeffile);
+
+
+
     //------Discretize polynomials-----------: There must be better way to do this? 
     discretize_time(0,t_vector,dt);   
 
@@ -102,20 +131,22 @@ int main(){
     discretize_poly(t_vector,y_disc.dddx,   poly_coeff_y.dddx);
     discretize_poly(t_vector,y_disc.ddddx,  poly_coeff_y.ddddx); 
 
-    discretize_poly(t_vector,z_disc.x,      poly_coeff_y.x); 
-    discretize_poly(t_vector,z_disc.dx,     poly_coeff_y.dx); 
-    discretize_poly(t_vector,z_disc.ddx,    poly_coeff_y.ddx); 
-    discretize_poly(t_vector,z_disc.dddx,   poly_coeff_y.dddx);
-    discretize_poly(t_vector,z_disc.ddddx,  poly_coeff_y.ddddx); 
+    discretize_poly(t_vector,z_disc.x,      poly_coeff_z.x); 
+    discretize_poly(t_vector,z_disc.dx,     poly_coeff_z.dx); 
+    discretize_poly(t_vector,z_disc.ddx,    poly_coeff_z.ddx); 
+    discretize_poly(t_vector,z_disc.dddx,   poly_coeff_z.dddx);
+    discretize_poly(t_vector,z_disc.ddddx,  poly_coeff_z.ddddx); 
 
     discretize_poly(t_vector,psi_disc.x,      poly_coeff_psi.x); 
     discretize_poly(t_vector,psi_disc.dx,     poly_coeff_psi.dx); 
     discretize_poly(t_vector,psi_disc.ddx,    poly_coeff_psi.ddx); 
     discretize_poly(t_vector,psi_disc.dddx,   poly_coeff_psi.dddx);
     discretize_poly(t_vector,psi_disc.ddddx,  poly_coeff_psi.ddddx); 
-
+    
     int i;
     for(i=0;i<DISCSIZE;i++){
+
+            
             t[0]=x_disc.ddx[i]; //why can't i do t={x_disc.ddx[i],y_disc.ddx[i],z_disc.ddx[i]}?
             t[1]=y_disc.ddx[i];
             t[2]=z_disc.ddx[i]+data.g;
@@ -181,8 +212,21 @@ int main(){
             u[1][i]=term1[0]+term3[0]; // moment around body x-axis
             u[2][i]=term1[1]+term3[1];// moment around body y-axis
             u[3][i]=term1[2]+term3[2];// moment around body z-axis
+            #ifdef LOG
+            fprintf(inputfile,"%f, %f, %f ,%f\n",u[0][i],u[1][i],u[2][i],u[3][i]);
+            fprintf(discfile,"%f, %f, %f, %f, %f, %f, ",t_vector[i],x_disc.x[i],x_disc.dx[i],x_disc.ddx[i],x_disc.dddx[i],x_disc.ddddx[i]);
+            fprintf(discfile,"%f, %f, %f, %f, %f, ",y_disc.x[i],y_disc.dx[i],y_disc.ddx[i],y_disc.dddx[i],y_disc.ddddx[i]);
+            fprintf(discfile,"%f, %f, %f, %f, %f, ",z_disc.x[i],z_disc.dx[i],z_disc.ddx[i],z_disc.dddx[i],z_disc.ddddx[i]);
+            fprintf(discfile,"%f, %f, %f, %f, %f\n",psi_disc.x[i],psi_disc.dx[i],psi_disc.ddx[i],psi_disc.dddx[i],psi_disc.ddddx[i]);
+            #endif
+            int dum2=3;
     }
 
+    #ifdef LOG
+    fclose(inputfile);
+    fclose(discfile);
+    #endif 
    int dummy=2; //for debug brakepoint
+   printf("Done");
 }
 

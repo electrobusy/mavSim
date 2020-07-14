@@ -258,6 +258,28 @@ title('vz')
 grid on 
 
 
+
+figure()
+subplot(141)
+plot(t,u(:,1));
+grid on 
+title("Thrust [N]") 
+
+subplot(142)
+plot(t,u(:,2));
+grid on 
+title("\tau\_x [Nm]")  
+
+subplot(143)
+plot(t,u(:,3));
+grid on 
+title("\tau\_y [Nm]") 
+
+subplot(144)
+plot(t,u(:,4));
+grid on
+title("\tau\_z [Nm]") 
+
 omega_z2=[extra.omega(1,3)];
 for i = 1:size(extra.omega_dot,1)
     az=extra.omega_dot(i,3);

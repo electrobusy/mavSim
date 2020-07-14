@@ -40,7 +40,7 @@ struct droneparameters data = {
     0.5,
     9.81,
     0.2,
-    {{0.0049,0,0},{0,0.0049,0},{0,0,00.69}},
+    {{0.0049,0,0},{0,0.0049,0},{0,0,0.0069}},
     1.91e-6,
     2.7e-7,
     {0,0,0},
@@ -60,6 +60,7 @@ void discretize_poly(float t_vector[DISCSIZE], float y[DISCSIZE], float poly_coe
     int i ;
     int j ;
     for (i=0;i<DISCSIZE;i++){
+        y[i]=0;
         for (j=0;j<MAX_POLY_ORDER;j++){
             y[i]=y[i]+poly_coeff[j]*pow(t_vector[i],j);            
         }
