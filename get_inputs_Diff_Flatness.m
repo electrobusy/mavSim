@@ -147,7 +147,7 @@ function [time,u, coeffs,extra,out] = get_inputs_Diff_Flatness(coeffs,T,data)
     nr_coeffs=size(coeffs,1);
     nr_states=size(coeffs,2);
     nr_derivatives=size(coeffs,4);
-    coeffile=fopen("coeffcients.txt",'wt');
+    coeffile=fopen("coefficients.txt",'wt');
     
     for sect = 1:nr_section
         for state= 1:nr_states

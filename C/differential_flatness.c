@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "differential_flatness.h"
-
+#include <string.h>
+#define MAXCHAR 2000
 #define LOG 
 struct poly_coeff poly_coeff_x = {
     {0,0,0,0.296296296445966,-0.0296296296495693,0.000790123457588112,-5.88608758630694e-15}, //x
@@ -102,18 +103,23 @@ int main(){
     fprintf(discfile," psi, dpsi, ddpsi, dddpsi, ddddpsi\n");
     #endif
 
-    // FILE * coeffile;
-    // coeffile=fopen("coeffcients.txt","r");
-    // int q = 0;
-
-    // fscanf (coeffile, "%c", &q);    
-    // while (!feof (coeffile))
-    //     {  
-    //     printf ("%c ", q);
-    //     fscanf (coeffile, "%c", &q);      
-    //     }
-    // fclose (coeffile);
-
+    // FILE *fp;
+    // char str[MAXCHAR];
+    // char coef[20];
+    // char* filename = "coefficients.txt";
+ 
+    // fp = fopen(filename, "r");
+    // if (fp == NULL){
+    //     printf("Could not open file %s",filename);
+    //     return 1;
+    // }
+    // while (fgets(str, MAXCHAR, fp) != NULL){
+    //     strcpy(coef,strtok(str,","));
+    //     printf("%s", coef);
+    //     int dummy=2;
+    // }
+    // fclose(fp);
+    
 
 
     //------Discretize polynomials-----------: There must be better way to do this? 
@@ -181,7 +187,7 @@ int main(){
             s[1]=y_disc.ddddx[i];
             s[2]=z_disc.ddddx[i];
 
-            //working toward body moments as described in http://arxiv.org/abs/1712.02402
+            //working towards body moments as described in http://arxiv.org/abs/1712.02402
             B1=c;
             C1=0;
             D1=dotproduct(x_b,j);
