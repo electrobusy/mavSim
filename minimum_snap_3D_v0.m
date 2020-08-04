@@ -67,7 +67,7 @@ dz = polyder(z);
 ddz = polyder(dz);
 dddz = polyder(ddz);
 ddddz = polyder(dddz);
-% - for polynomial z: 
+% - for polynomial psi: 
 dpsi = polyder(psi);
 ddpsi = polyder(dpsi);
 
