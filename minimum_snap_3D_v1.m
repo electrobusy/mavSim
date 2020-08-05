@@ -14,6 +14,7 @@ keyframes = [
         0,0,0,0;
         4,6,5,pi/3;
         5,8,10,pi/2;
+        8,30,10,0;
     ]';
 
 % -- number of keyframes: 
@@ -26,7 +27,8 @@ n = 6; % choose order
 t_m = 5; % [sec]
 
 % -- vector of times:
-t = [0, 3, t_m]; % [t_0, t_1, ..., t_m]
+% t = [0, 3, t_m]; % [t_0, t_1, ..., t_m]
+t=linspace(0,t_m,size(keyframes,2));
 % t_vec = t(2:end-1); % [t_1, ..., t_{m-1}]
 
 % -- derivatives to minimize: 
@@ -37,6 +39,7 @@ k_psi = 2; % angular yaw acc.
 
 % Let's consider a polynomial: x(t) = t^n + t^{n-1} + ... + t^2 + t + 1 
 x = ones(1,n+1);
+
 % Same for y(t): 
 y = ones(1,n+1);
 % Same for z(t):
@@ -65,290 +68,12 @@ ddddz = polyder(dddz);
 dpsi = polyder(psi);
 ddpsi = polyder(dpsi);
 
-% -- Construct A_eq matrix and b_eq vector
-% -- Construct A_eq matrix and b_eq vector
-% -> for x: 
-% - polynomial 1 
-A_x_p1 = [
-    % waypoint constraints: sigma(t_i) = sigma_i
-    polyval_terms(x,t(1)); % t_0
-    polyval_terms(x,t(2)); % t_1
-    % derivatives (in the first waypoints) d^{p}sigma/dt^{p} = 0 (or free)
-    polyval_terms(dx,t(1)) 0;
-    polyval_terms(ddx,t(1)) 0 0;
-    % polyval_terms(dddx,t(1)) 0 0 0;
-    % polyval_terms(ddddx,t(1)) 0 0 0 0; 
-    ];
 
-b_x_p1 = [
-    keyframes(1,1);
-    keyframes(1,2);
-    0; 
-    0; 
-    % inf; 
-    % inf;
-    ];
+[A_x,b_x]=get_A_eq_b_eqxyz(keyframes,t,x,dx,ddx,dddx,ddddx,'x');
+[A_y,b_y]=get_A_eq_b_eqxyz(keyframes,t,y,dy,ddy,dddy,ddddy,'y');
+[A_z,b_z]=get_A_eq_b_eqxyz(keyframes,t,x,dz,ddz,dddz,ddddz,'z');
+[A_psi,b_psi]=get_A_eq_b_eqxyz(keyframes,t,psi,dpsi,ddpsi,[],[],'psi');
 
-% - polynomial 2 
-A_x_p2 = [
-    % waypoint constraints: sigma(t_i) = sigma_i
-    polyval_terms(x,t(2)); % t_1
-    polyval_terms(x,t(end)); % t_end
-    % derivatives (in the last waypoint) d^{p}sigma/dt^{p} = 0 (or free)
-    polyval_terms(dx,t(end)) 0;
-    polyval_terms(ddx,t(end)) 0 0;
-    % polyval_terms(dddx,t(end)) 0 0 0;
-    % polyval_terms(ddddx,t(end)) 0 0 0 0; 
-    ];
-
-b_x_p2 = [
-    keyframes(1,2);
-    keyframes(1,3);
-    0; 
-    0; 
-    % inf; 
-    % inf;
-    ];
-
-% - continuity constraints: 
-A_x_cont = [
-    polyval_terms(x,t(2)), -polyval_terms(x,t(2));
-    polyval_terms(dx,t(2)) 0, -polyval_terms(dx,t(2)) 0;
-    polyval_terms(ddx,t(2)) 0 0, -polyval_terms(ddx,t(2)) 0 0;
-    polyval_terms(dddx,t(2)) 0 0 0, -polyval_terms(dddx,t(2)) 0 0 0;
-    polyval_terms(ddddx,t(2)) 0 0 0 0, -polyval_terms(ddddx,t(2)) 0 0 0 0;
-    ];
-
-b_x_cont = [
-    0;
-    0;
-    0;
-    0;
-    0;
-    ];
-
-% - A_x:
-A_x_aux = blkdiag(A_x_p1,A_x_p2);
-A_x = [
-    A_x_aux; 
-    A_x_cont
-    ];
-
-b_x = [
-    b_x_p1;
-    b_x_p2;
-    b_x_cont
-    ];
-
-% -> for y: 
-% - polynomial 1 
-A_y_p1 = [
-    % waypoint constraints: sigma(t_i) = sigma_i
-    polyval_terms(y,t(1)); % t_0
-    polyval_terms(y,t(2)); % t_1
-    % derivatives (in the first waypoints) d^{p}sigma/dt^{p} = 0 (or free)
-    polyval_terms(dy,t(1)) 0;
-    polyval_terms(ddy,t(1)) 0 0;
-    % polyval_terms(dddy,t(1)) 0 0 0;
-    % polyval_terms(ddddy,t(1)) 0 0 0 0; 
-    ];
-
-b_y_p1 = [
-    keyframes(2,1);
-    keyframes(2,2);
-    0; 
-    0; 
-    % inf; 
-    % inf;
-    ];
-
-% - polynomial 2 
-A_y_p2 = [
-    % waypoint constraints: sigma(t_i) = sigma_i
-    polyval_terms(y,t(2)); % t_1
-    polyval_terms(y,t(end)); % t_end
-    % derivatives (in the last waypoint) d^{p}sigma/dt^{p} = 0 (or free)
-    polyval_terms(dy,t(end)) 0;
-    polyval_terms(ddy,t(end)) 0 0;
-    % polyval_terms(dddy,t(end)) 0 0 0;
-    % polyval_terms(ddddy,t(end)) 0 0 0 0; 
-    ];
-
-b_y_p2 = [
-    keyframes(2,2);
-    keyframes(2,3);
-    0; 
-    0; 
-    % inf; 
-    % inf;
-    ];
-
-% - continuity constraints: 
-A_y_cont = [
-    polyval_terms(y,t(2)), -polyval_terms(y,t(2));
-    polyval_terms(dy,t(2)) 0, -polyval_terms(dy,t(2)) 0;
-    polyval_terms(ddy,t(2)) 0 0, -polyval_terms(ddy,t(2)) 0 0;
-    polyval_terms(dddy,t(2)) 0 0 0, -polyval_terms(dddy,t(2)) 0 0 0;
-    polyval_terms(ddddy,t(2)) 0 0 0 0, -polyval_terms(ddddy,t(2)) 0 0 0 0;
-    ];
-
-b_y_cont = [
-    0;
-    0;
-    0;
-    0;
-    0;
-    ];
-
-% - A_y:
-A_y_aux = blkdiag(A_y_p1,A_y_p2);
-A_y = [
-    A_y_aux; 
-    A_y_cont
-    ];
-
-b_y = [
-    b_y_p1;
-    b_y_p2;
-    b_y_cont
-    ];
-
-% -> for z: 
-% - polynomial 1 
-A_z_p1 = [
-    % waypoint constraints: sigma(t_i) = sigma_i
-    polyval_terms(z,t(1)); % t_0
-    polyval_terms(z,t(2)); % t_1
-    % derivatives (in the first waypoints) d^{p}sigma/dt^{p} = 0 (or free)
-    polyval_terms(dz,t(1)) 0;
-    polyval_terms(ddz,t(1)) 0 0;
-    % polyval_terms(dddz,t(1)) 0 0 0;
-    % polyval_terms(ddddz,t(1)) 0 0 0 0; 
-    ];
-
-b_z_p1 = [
-    keyframes(3,1);
-    keyframes(3,2);
-    0; 
-    0; 
-    % inf; 
-    % inf;
-    ];
-
-% - polynomial 2 
-A_z_p2 = [
-    % waypoint constraints: sigma(t_i) = sigma_i
-    polyval_terms(z,t(2)); % t_1
-    polyval_terms(z,t(end)); % t_end
-    % derivatives (in the last waypoint) d^{p}sigma/dt^{p} = 0 (or free)
-    polyval_terms(dz,t(end)) 0;
-    polyval_terms(ddz,t(end)) 0 0;
-    % polyval_terms(dddz,t(end)) 0 0 0;
-    % polyval_terms(ddddz,t(end)) 0 0 0 0; 
-    ];
-
-b_z_p2 = [
-    keyframes(3,2);
-    keyframes(3,3);
-    0; 
-    0; 
-    % inf; 
-    % inf;
-    ];
-
-% - continuity constraints: 
-A_z_cont = [
-    polyval_terms(z,t(2)), -polyval_terms(z,t(2));
-    polyval_terms(dz,t(2)) 0, -polyval_terms(dz,t(2)) 0;
-    polyval_terms(ddz,t(2)) 0 0, -polyval_terms(ddz,t(2)) 0 0;
-    polyval_terms(dddz,t(2)) 0 0 0, -polyval_terms(dddz,t(2)) 0 0 0;
-    polyval_terms(ddddz,t(2)) 0 0 0 0, -polyval_terms(ddddz,t(2)) 0 0 0 0;
-    ];
-
-b_z_cont = [
-    0;
-    0;
-    0;
-    0;
-    0;
-    ];
-
-% - A_z:
-A_z_aux = blkdiag(A_z_p1,A_z_p2);
-A_z = [
-    A_z_aux; 
-    A_z_cont
-    ];
-
-b_z = [
-    b_z_p1;
-    b_z_p2;
-    b_z_cont
-    ];
-
-% -> for psi: 
-% - polynomial 1 
-A_psi_p1 = [
-    % waypoint constraints: sigma(t_i) = sigma_i
-    polyval_terms(psi,t(1)); % t_0
-    polyval_terms(psi,t(2)); % t_1
-    % derivatives (in the first waypoints) d^{p}sigma/dt^{p} = 0 (or free)
-    polyval_terms(dpsi,t(1)) 0;
-    polyval_terms(ddpsi,t(1)) 0 0;
-    ];
-
-b_psi_p1 = [
-    keyframes(4,1);
-    keyframes(4,2);
-    0; 
-    0; 
-    ];
-
-% - polynomial 2 
-A_psi_p2 = [
-    % waypoint constraints: sigma(t_i) = sigma_i
-    polyval_terms(psi,t(2)); % t_1
-    polyval_terms(psi,t(end)); % t_end
-    % derivatives (in the last waypoint) d^{p}sigma/dt^{p} = 0 (or free)
-    polyval_terms(dz,t(end)) 0;
-    polyval_terms(ddz,t(end)) 0 0;
-    ];
-
-b_psi_p2 = [
-    keyframes(4,2);
-    keyframes(4,3);
-    0; 
-    0; 
-    ];
-
-% - continuity constraints: 
-A_psi_cont = [
-    polyval_terms(psi,t(2)), -polyval_terms(psi,t(2));
-    polyval_terms(dpsi,t(2)) 0, -polyval_terms(dpsi,t(2)) 0;
-    polyval_terms(ddpsi,t(2)) 0 0, -polyval_terms(ddpsi,t(2)) 0 0;
-    ];
-
-b_psi_cont = [
-    0;
-    0;
-    0;
-    ];
-
-% - A_psi:
-A_psi_aux = blkdiag(A_psi_p1,A_psi_p2);
-A_psi = [
-    A_psi_aux; 
-    A_psi_cont
-    ];
-
-b_psi = [
-    b_psi_p1;
-    b_psi_p2;
-    b_psi_cont
-    ];
-
-% - Obtain A_eq using the block matrix form and concatenate b_x, b_y, b_z, 
-% b_psi to get b_eq:
 A_eq = blkdiag(A_x, A_y, A_z, A_psi);
 b_eq = [b_x; b_y; b_z; b_psi];
 
@@ -401,10 +126,28 @@ for i = 1:length(ddpsi)
     H_z(i,1:length(ddpsi)) = res(res > 0);
 end
 
-H = blkdiag(H_x,H_x,H_y,H_y,H_z,H_z,H_psi,H_psi);
+H=H_x;
+for i=2:(m-1)
+    H=blkdiag(H,H_x);
+end
+for i=1:(m-1)
+    H=blkdiag(H,H_y);
+end
+
+for i=1:(m-1)
+    H=blkdiag(H,H_z);
+end
+
+for i=1:(m-1)
+    H=blkdiag(H,H_psi);
+end
+
+
+
+% H = blkdiag(H_x,H_x,H_y,H_y,H_z,H_z,H_psi,H_psi);
 
 % -- Solves quadratic programming problem: 
-f = zeros(2*4*(n+1),1);
+f = zeros(size(A_eq,2),1);
 sol = quadprog(H,f,[],[],A_eq,b_eq);
 
 % -- Plots:
@@ -412,219 +155,261 @@ dt = 0.01;
 t_1 = 0:dt:t(2);
 t_2 = t(2):dt:t(end);
 
-pol_x_1 = x.*sol(1:n+1)';
-d_pol_x_1 = dx.*sol(1:n+1-1)';
-dd_pol_x_1 = ddx.*sol(1:n+1-2)';
-ddd_pol_x_1 = dddx.*sol(1:n+1-3)';
-dddd_pol_x_1 = ddddx.*sol(1:n+1-4)';
+pol_x=[];
+d_pol_x=[];
+dd_pol_x=[];
+ddd_pol_x=[];
+dddd_pol_x=[];
 
-pol_x_2 = y.*sol(n+2:2*(n+1))';
-d_pol_x_2 = dy.*sol(n+2:2*(n+1)-1)';
-dd_pol_x_2 = ddy.*sol(n+2:2*(n+1)-2)';
-ddd_pol_x_2 = dddy.*sol(n+2:2*(n+1)-3)';
-dddd_pol_x_2 = ddddy.*sol(n+2:2*(n+1)-4)';
+pol_y=[];
+d_pol_y=[];
+dd_pol_y=[];
+ddd_pol_y=[];
+dddd_pol_y=[];
 
-pol_y_1 = y.*sol(2*(n+1)+1:3*(n+1))';
-d_pol_y_1 = dy.*sol(2*(n+1)+1:3*(n+1)-1)';
-dd_pol_y_1 = ddy.*sol(2*(n+1)+1:3*(n+1)-2)';
-ddd_pol_y_1 = dddy.*sol(2*(n+1)+1:3*(n+1)-3)';
-dddd_pol_y_1 = ddddy.*sol(2*(n+1)+1:3*(n+1)-4)';
+pol_z=[];
+d_pol_z=[];
+dd_pol_z=[];
+ddd_pol_z=[];
+dddd_pol_z=[];
 
-pol_y_2 = y.*sol(3*(n+1)+1:4*(n+1))';
-d_pol_y_2 = dy.*sol(3*(n+1)+1:4*(n+1)-1)';
-dd_pol_y_2 = ddy.*sol(3*(n+1)+1:4*(n+1)-2)';
-ddd_pol_y_2 = dddy.*sol(3*(n+1)+1:4*(n+1)-3)';
-dddd_pol_y_2 = ddddy.*sol(3*(n+1)+1:4*(n+1)-4)';
+pol_psi=[];
+d_pol_psi=[];
+dd_pol_psi=[];
 
-pol_z_1 = z.*sol(4*(n+1)+1:5*(n+1))';
-d_pol_z_1 = dz.*sol(4*(n+1)+1:5*(n+1)-1)';
-dd_pol_z_1 = ddz.*sol(4*(n+1)+1:5*(n+1)-2)';
-ddd_pol_z_1 = dddz.*sol(4*(n+1)+1:5*(n+1)-3)';
-dddd_pol_z_1 = ddddz.*sol(4*(n+1)+1:5*(n+1)-4)';
+% Isolate coefficients from solution
+t_s.t_0=0;
+for i = 1:m-1
+    pol_x=[pol_x ;x.*sol(1+(n+1)*(i-1):(n+1)*i)';];
+    d_pol_x=[ d_pol_x ;dx.*sol(1+(n+1)*(i-1):(n+1)*i-1)';];
+    dd_pol_x=[ dd_pol_x ;ddx.*sol(1+(n+1)*(i-1):(n+1)*i-2)';];
+    ddd_pol_x=[ddd_pol_x ;dddx.*sol(1+(n+1)*(i-1):(n+1)*i-3)';];
+    dddd_pol_x=[dddd_pol_x ;ddddx.*sol(1+(n+1)*(i-1):(n+1)*i-4)';];     
+    
+    pol_y=[pol_y ;y.*sol((m-1)*(n+1)+1+(n+1)*(i-1):((m-1)*(n+1)+(n+1)*i))';];
+    d_pol_y=[ d_pol_y ;dy.*sol((m-1)*(n+1)+1+(n+1)*(i-1):((m-1)*(n+1)+(n+1)*i)-1)';];
+    dd_pol_y=[ dd_pol_y ;ddy.*sol((m-1)*(n+1)+1+(n+1)*(i-1):((m-1)*(n+1)+(n+1)*i)-2)';];
+    ddd_pol_y=[ddd_pol_y ;dddy.*sol((m-1)*(n+1)+1+(n+1)*(i-1):((m-1)*(n+1)+(n+1)*i)-3)';];
+    dddd_pol_y=[dddd_pol_y ;ddddy.*sol((m-1)*(n+1)+1+(n+1)*(i-1):((m-1)*(n+1)+(n+1)*i)-4)';];  
+%     
+    pol_z=[pol_z ;z.*sol(2*(m-1)*(n+1)+1+(n+1)*(i-1):(2*(m-1)*(n+1)+(n+1)*i))';];
+    d_pol_z=[ d_pol_z ;dz.*sol(2*(m-1)*(n+1)+1+(n+1)*(i-1):(2*(m-1)*(n+1)+(n+1)*i-1))';];
+    dd_pol_z=[ dd_pol_z ;ddz.*sol(2*(m-1)*(n+1)+1+(n+1)*(i-1):(2*(m-1)*(n+1)+(n+1)*i-2))';];
+    ddd_pol_z=[ddd_pol_z ;dddz.*sol(2*(m-1)*(n+1)+1+(n+1)*(i-1):(2*(m-1)*(n+1)+(n+1)*i-3))';];
+    dddd_pol_z=[dddd_pol_z ;ddddz.*sol(2*(m-1)*(n+1)+1+(n+1)*(i-1):(2*(m-1)*(n+1)+(n+1)*i-4))';];  
+    
+    pol_psi=[pol_psi ;psi.*sol(3*(m-1)*(n+1)+1+(n+1)*(i-1):(3*(m-1)*(n+1)+(n+1)*i))';];
+    d_pol_psi=[ d_pol_psi ;dpsi.*sol(3*(m-1)*(n+1)+1+(n+1)*(i-1):(3*(m-1)*(n+1)+(n+1)*i-1))';];
+    dd_pol_psi=[ dd_pol_psi ;ddpsi.*sol(3*(m-1)*(n+1)+1+(n+1)*(i-1):(3*(m-1)*(n+1)+(n+1)*i-2))';];
+    t0=t_s.(strcat("t_",num2str(i-1)));
+    t0=t0(end);
+    t_s.(strcat("t_",num2str(i)))= t0:dt:t(i+1);
+end
 
-pol_z_2 = z.*sol(5*(n+1)+1:6*(n+1))';
-d_pol_z_2 = dz.*sol(5*(n+1)+1:6*(n+1)-1)';
-dd_pol_z_2 = ddz.*sol(5*(n+1)+1:6*(n+1)-2)';
-ddd_pol_z_2 = dddz.*sol(5*(n+1)+1:6*(n+1)-3)';
-dddd_pol_z_2 = ddddz.*sol(5*(n+1)+1:6*(n+1)-4)';
-
-pol_psi_1 = psi.*sol(6*(n+1)+1:7*(n+1))';
-d_pol_psi_1 = dpsi.*sol(6*(n+1)+1:7*(n+1)-1)';
-dd_pol_psi_1 = ddpsi.*sol(6*(n+1)+1:7*(n+1)-2)';
-
-pol_psi_2 = psi.*sol(7*(n+1)+1:8*(n+1))';
-d_pol_psi_2 = dpsi.*sol(7*(n+1)+1:8*(n+1)-1)';
-dd_pol_psi_2 = ddpsi.*sol(7*(n+1)+1:8*(n+1)-2)';
 
 % -- plot x
-figure(1);
+figure();
 subplot(3,2,[1 2])
-plot(t_1,polyval(pol_x_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(pol_x(i,:),ti));
 hold on;
-plot(t_2,polyval(pol_x_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('x [m]');
 grid on;
 
 subplot(3,2,3)
-plot(t_1,polyval(d_pol_x_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(d_pol_x(i,:),ti));
 hold on;
-plot(t_2,polyval(d_pol_x_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('v_x [m/s]');
 grid on;
 
 subplot(3,2,4)
-plot(t_1,polyval(dd_pol_x_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(dd_pol_x(i,:),ti));
 hold on;
-plot(t_2,polyval(dd_pol_x_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('a_x [m/s^2]');
 grid on;
 
 subplot(3,2,5)
-plot(t_1,polyval(ddd_pol_x_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(ddd_pol_x(i,:),ti));
 hold on;
-plot(t_2,polyval(ddd_pol_x_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('j_x [m/s^3]');
 grid on;
 
 subplot(3,2,6)
-plot(t_1,polyval(dddd_pol_x_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(dddd_pol_x(i,:),ti));
 hold on;
-plot(t_2,polyval(dddd_pol_x_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('s_x [m/s^4]');
 grid on;
 
 % -- plot y
-figure(2);
+figure();
 subplot(3,2,[1 2])
-plot(t_1,polyval(pol_y_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(pol_y(i,:),ti));
 hold on;
-plot(t_2,polyval(pol_y_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('y [m]');
 grid on;
 
 subplot(3,2,3)
-plot(t_1,polyval(d_pol_y_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(d_pol_y(i,:),ti));
 hold on;
-plot(t_2,polyval(d_pol_y_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('v_y [m/s]');
 grid on;
 
 subplot(3,2,4)
-plot(t_1,polyval(dd_pol_y_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(dd_pol_y(i,:),ti));
 hold on;
-plot(t_2,polyval(dd_pol_y_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('a_y [m/s^2]');
 grid on;
 
 subplot(3,2,5)
-plot(t_1,polyval(ddd_pol_y_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(ddd_pol_y(i,:),ti));
 hold on;
-plot(t_2,polyval(ddd_pol_y_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('j_y [m/s^3]');
 grid on;
 
 subplot(3,2,6)
-plot(t_1,polyval(dddd_pol_y_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(dddd_pol_y(i,:),ti));
 hold on;
-plot(t_2,polyval(dddd_pol_y_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('s_y [m/s^4]');
 grid on;
 
 % -- plot z
-figure(3);
+figure();
 subplot(3,2,[1 2])
-plot(t_1,polyval(pol_z_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(pol_z(i,:),ti));
 hold on;
-plot(t_2,polyval(pol_z_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('z [m]');
 grid on;
 
 subplot(3,2,3)
-plot(t_1,polyval(d_pol_z_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(d_pol_z(i,:),ti));
 hold on;
-plot(t_2,polyval(d_pol_z_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('v_z [m/s]');
 grid on;
 
 subplot(3,2,4)
-plot(t_1,polyval(dd_pol_z_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(dd_pol_z(i,:),ti));
 hold on;
-plot(t_2,polyval(dd_pol_z_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('a_z [m/s^2]');
 grid on;
 
 subplot(3,2,5)
-plot(t_1,polyval(ddd_pol_z_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(ddd_pol_z(i,:),ti));
 hold on;
-plot(t_2,polyval(ddd_pol_z_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('j_z [m/s^3]');
 grid on;
 
 subplot(3,2,6)
-plot(t_1,polyval(dddd_pol_z_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(dddd_pol_z(i,:),ti));
 hold on;
-plot(t_2,polyval(dddd_pol_z_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('s_z [m/s^4]');
 grid on;
 
 % -- plot psi
-figure(4);
+figure();
 subplot(2,2,[1 2])
-plot(t_1,polyval(pol_psi_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(pol_psi(i,:),ti));
 hold on;
-plot(t_2,polyval(pol_psi_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('\psi [rad]');
 grid on;
 
 subplot(2,2,3)
-plot(t_1,polyval(d_pol_psi_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(d_pol_psi(i,:),ti));
 hold on;
-plot(t_2,polyval(d_pol_psi_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('d\psi [rad/s]');
 grid on;
 
 subplot(2,2,4)
-plot(t_1,polyval(dd_pol_psi_1,t_1));
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+plot(ti,polyval(dd_pol_psi(i,:),ti));
 hold on;
-plot(t_2,polyval(dd_pol_psi_2,t_2));
+end
 xlabel('t [sec]');
 ylabel('dd\psi [rad/s^2]');
 grid on;
 
 %% 
-figure(5);
+figure();
+V=[];
+x_data=[];
+y_data=[];
+z_data=[];
+for i=1:m-1
+    ti=t_s.(strcat("t_",num2str(i)));
+V=[V,sqrt(polyval(d_pol_x(i,:),ti).^2 + polyval(d_pol_y(i,:),ti).^2 + polyval(d_pol_z(i,:),ti).^2)];
+x_data=[x_data,  polyval(pol_x(i,:),ti)];
+y_data=[y_data,  polyval(pol_y(i,:),ti)];
+z_data=[z_data,  polyval(pol_z(i,:),ti)];
+hold on;
+end
 
-V_1 = sqrt(polyval(d_pol_x_1,t_1).^2 + polyval(d_pol_y_1,t_1).^2 + polyval(d_pol_z_1,t_1).^2);
-V_2 = sqrt(polyval(d_pol_x_2,t_2).^2 + polyval(d_pol_y_2,t_2).^2 + polyval(d_pol_z_2,t_2).^2);
-V = [V_1, V_2];
-
-x_data_1 = polyval(pol_x_1,t_1);
-y_data_1 = polyval(pol_y_1,t_1);
-z_data_1 = polyval(pol_z_1,t_1);
-x_data_2 = polyval(pol_x_2,t_2);
-y_data_2 = polyval(pol_y_2,t_2);
-z_data_2 = polyval(pol_z_2,t_2);
-
-x_data = [x_data_1 x_data_2];
-y_data = [y_data_1 y_data_2];
-z_data = [z_data_1 z_data_2];
 
 surf([x_data(:) x_data(:)], [y_data(:) y_data(:)], [z_data(:) z_data(:)], ...
     [V(:) V(:)], ...  % Reshape and replicate data
@@ -641,3 +426,4 @@ for i = 1:m
     hold on;
     scatter3(keyframes(1,i),keyframes(2,i),keyframes(3,i),'ro');
 end
+view([1,1,1]);
