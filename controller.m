@@ -1,8 +1,8 @@
 function [u, extra] = controller(state,reference,data)
 
 %% get desired acceleration
-a_ref=reference(1,1:3,1,3);
-a_fb=data.K_pos*(reference(1,1:3,1,1)'-state(1:3))+data.K_vel*(reference(1,1:3,1,2)'-state(7:9));
+a_ref=reference(1,1:3,3);
+a_fb=data.K_pos*(reference(1,1:3,1)'-state(1:3))+data.K_vel*(reference(1,1:3,2)'-state(7:9));
 a_des=(a_fb'+a_ref)'+[0;0;data.g];
 
 %% get orientation

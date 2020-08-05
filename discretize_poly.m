@@ -3,18 +3,24 @@ function [t,poly] =  discretize_poly(coeffs,T,dt)
     poly_order=size(coeffs,1);
     nr_states=size(coeffs,2);
     nr_derivative=size(coeffs,4)-1;
-
-    t=nan((max(diff(T)))/dt+1,poly_order,nr_sections); %each section may have a different length, the ends are padded with nans
+    
+    tl=[];
+    t=nan((max(diff(T)))/dt,poly_order,nr_sections); %each section may have a different length, the ends are padded with nans
     % build time array to multiply coefficients with
-    poly=nan(size(t,1),nr_states,nr_sections,nr_derivative+1);
+%     poly=nan(size(t,1),nr_states,nr_sections,nr_derivative+1);
+    poly=nan((T(end)-T(1))/dt,nr_states,nr_derivative+1);
+    k=1;
     for s = 1:nr_sections
-        ts=T(s):dt:T(s+1);
+        ts=T(s):dt:T(s+1)-dt;
         for n=1:size(t,2)
             t(1:length(ts),n,s)=ts.^(n-1);
         end
         for d=1:nr_derivative+1
-            poly(:,:,s,d)=t(:,:,s)*coeffs(:,:,s,d);
+            vals=t(1:length(ts),:,s)*coeffs(:,:,s,d);
+            poly(k:size(vals,1)+k-1,:,d)=vals;
         end
+        k=k+size(ts,2);
+     tl=[tl,ts];
     end
-    t=t(:,2,:);
+    t=tl;%reshape(t(:,2,:),size(poly,1),1);
     end

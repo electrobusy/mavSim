@@ -5,10 +5,10 @@ plotflag=0;
 close all
 
 if not(exist('poly_coeffs','var'))
-    minimum_snap_3D_v0;
+    minimum_snap_3D_v1;
 end
 
-clearvars -except poly_coeffs t_m keyframes
+clearvars -except poly_coeffs keyframes t 
 
  %% Drone Parameters
     data.m = 0.38905;
@@ -24,7 +24,7 @@ clearvars -except poly_coeffs t_m keyframes
     data.B=zeros(3);%   rotational rotation drag B*omega 
     
     data.rotorcontrol=0;    
-    data.K_pos=eye(3).*[0.2,0.2,0.5]; %position error to desired acceleration
+    data.K_pos=eye(3).*[0.5,0.5,0.5]; %position error to desired acceleration
     data.K_vel=eye(3).*[0.3,0.3,0.3];  %velocity error to acceleration
 %     data.K_acc=eye(3).*[0;0;0];
     data.K_theta=eye(3).*[2;2;2]; %angle to omega
@@ -33,8 +33,13 @@ clearvars -except poly_coeffs t_m keyframes
 
 
 %% Get input vaLues from differential flatness
-T=[0,t_m]; %Timestamps
+T=t;%[0,t_m]; %Timestamps
 data.dt=1e-2;
+for i = 1:length(T)
+    T(i)=T(i)-mod(T(i),data.dt);
+end
+
+
 [t,u,poly_coeffs,extra,disc]=get_inputs_Diff_Flatness(poly_coeffs,T,data);
 
 
@@ -56,7 +61,10 @@ for i=1:length(t)
     data.omega=extra.omega(i,:)';
     data.omega_dot=extra.omega_dot(i,:)';
     uin=u(i,:);
-    [u2,ctrlextra]=controller(state,disc(i,:,:,:),data); %disc= discretized polynomial
+    if(t(i)>10)
+        dymm=2;
+    end
+    [u2,ctrlextra]=controller(state,disc(i,:,:),data); %disc= discretized polynomial
 
     euler_des_l=[euler_des_l,ctrlextra.euler_des];
     omega_des_l=[omega_des_l,ctrlextra.omega_des];
@@ -211,49 +219,49 @@ title("Yaw moment")
 xlabel('t');
 ylabel('Nm')
 grid on
-[tt,traj]=discretize_poly(poly_coeffs,T,mean(diff(t)));
+
 
 
 figure()
 subplot(2,3,1)
 plot(t,statel(1,1:end-1));
 hold on 
-plot(t,disc(:,1,1,1),'--')
+plot(t,disc(:,1,1),'--')
 title('x')
 grid on 
 
 subplot(2,3,2)
 plot(t,statel(2,1:end-1));
 hold on 
-plot(t,disc(:,2,1,1),'--')
+plot(t,disc(:,2,1),'--')
 title('y')
 grid on 
 
 subplot(2,3,3)
 plot(t,statel(3,1:end-1));
 hold on 
-plot(t,disc(:,3,1,1),'--')
+plot(t,disc(:,3,1),'--')
 title('z')
 grid on 
 
 subplot(2,3,4)
 plot(t,statel(7,1:end-1));
 hold on 
-plot(t,disc(:,1,1,2),'--')
+plot(t,disc(:,1,2),'--')
 title('vx')
 grid on 
 
 subplot(2,3,5)
 plot(t,statel(8,1:end-1));
 hold on 
-plot(t,disc(:,2,1,2),'--')
+plot(t,disc(:,2,2),'--')
 title('vy')
 grid on 
 
 subplot(2,3,6)
 plot(t,statel(9,1:end-1));
 hold on 
-plot(t,disc(:,3,1,2),'--')
+plot(t,disc(:,3,2),'--')
 title('vz')
 grid on 
 

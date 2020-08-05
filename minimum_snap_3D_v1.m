@@ -11,10 +11,10 @@ close all
 
 % -- keyframes = [x y z psi]' (where x, y, z and psi are column vectors)
 keyframes = [
-        0,0,0,0;
-        4,6,5,pi/3;
-        5,8,10,pi/2;
-        8,30,10,0;
+        0,0,0,0.5*pi;
+        4,0,5,0.5*pi;
+        5,0,5,0.5*pi;
+        7,2,5,0.5*pi
     ]';
 
 % -- number of keyframes: 
@@ -24,7 +24,7 @@ keyframes = [
 n = 6; % choose order 
 
 % -- total time: 
-t_m = 5; % [sec]
+t_m = 20; % [sec]
 
 % -- vector of times:
 % t = [0, 3, t_m]; % [t_0, t_1, ..., t_m]
@@ -177,6 +177,9 @@ pol_psi=[];
 d_pol_psi=[];
 dd_pol_psi=[];
 
+
+poly_coeffs=zeros(max([length(pol_x),length(pol_y),length(pol_z),length(pol_psi)]),4,m-1,5); 
+
 % Isolate coefficients from solution
 t_s.t_0=0;
 for i = 1:m-1
@@ -204,9 +207,40 @@ for i = 1:m-1
     t0=t_s.(strcat("t_",num2str(i-1)));
     t0=t0(end);
     t_s.(strcat("t_",num2str(i)))= t0:dt:t(i+1);
+    
+    
+    % put the coefficients in a format as read by the differential flatness code: 
+    poly_coeffs=augment_arrays(poly_coeffs,flip(pol_x(i,:)),1,i,1);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(d_pol_x(i,:)),1,i,2);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(dd_pol_x(i,:)),1,i,3);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(ddd_pol_x(i,:)),1,i,4);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(dddd_pol_x(i,:)),1,i,5);
+    
+    poly_coeffs=augment_arrays(poly_coeffs,flip(pol_y(i,:)),2,i,1);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(d_pol_y(i,:)),2,i,2);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(dd_pol_y(i,:)),2,i,3);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(ddd_pol_y(i,:)),2,i,4);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(dddd_pol_y(i,:)),2,i,5);
+    
+    poly_coeffs=augment_arrays(poly_coeffs,flip(pol_z(i,:)),3,i,1);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(d_pol_z(i,:)),3,i,2);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(dd_pol_z(i,:)),3,i,3);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(ddd_pol_z(i,:)),3,i,4);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(dddd_pol_z(i,:)),3,i,5);
+    
+    poly_coeffs=augment_arrays(poly_coeffs,flip(pol_psi(i,:)),4,i,1);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(d_pol_psi(i,:)),4,i,2);
+    poly_coeffs=augment_arrays(poly_coeffs,flip(dd_pol_psi(i,:)),4,i,3);
+    
 end
 
 
+
+
+
+
+
+if 1
 % -- plot x
 figure();
 subplot(3,2,[1 2])
@@ -427,3 +461,8 @@ for i = 1:m
     scatter3(keyframes(1,i),keyframes(2,i),keyframes(3,i),'ro');
 end
 view([1,1,1]);
+end
+
+function coeffs = augment_arrays(coeffs,poly,statedim,sectiondim,derivativedim)
+    coeffs(1:length(poly),statedim,sectiondim,derivativedim)=poly;
+end
