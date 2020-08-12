@@ -11,10 +11,10 @@ close all
 
 % -- keyframes = [x y z psi]' (where x, y, z and psi are column vectors)
 keyframes = [
-        0,0,0,0.5*pi;
-        4,0,5,0.5*pi;
-        5,0,5,0.5*pi;
-        7,2,5,0.5*pi
+        0,0,0,0     ;
+        4,0,5,0;
+        5,0,5,0;
+        7,2,5,0
     ]';
 
 % -- number of keyframes: 
@@ -24,7 +24,7 @@ keyframes = [
 n = 6; % choose order 
 
 % -- total time: 
-t_m = 20; % [sec]
+t_m = 5; % [sec]
 
 % -- vector of times:
 % t = [0, 3, t_m]; % [t_0, t_1, ..., t_m]
@@ -461,6 +461,7 @@ for i = 1:m
     scatter3(keyframes(1,i),keyframes(2,i),keyframes(3,i),'ro');
 end
 view([1,1,1]);
+axis equal
 end
 
 function coeffs = augment_arrays(coeffs,poly,statedim,sectiondim,derivativedim)

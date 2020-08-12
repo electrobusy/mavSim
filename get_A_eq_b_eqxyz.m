@@ -12,7 +12,7 @@ elseif strcmp(variablename,'y')
 elseif strcmp(variablename,'z')
     j=3;
 elseif strcmp(variablename,'psi')
-    j=3;
+    j=4;
 end
 for i=1:(m-1) %loop over number of sections between keyframes
     

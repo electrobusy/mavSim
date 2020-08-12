@@ -1,33 +1,20 @@
-function [u, extra] = controller(state,reference,data)
-
-%% get desired acceleration
-a_ref=reference(1,1:3,3);
-a_fb=data.K_pos*(reference(1,1:3,1)'-state(1:3))+data.K_vel*(reference(1,1:3,2)'-state(7:9));
-a_des=(a_fb'+a_ref)'+[0;0;data.g];
-
-%% get orientation
+function [u, extra] = controller(state,R,reference,data)
 phi=state(4);
 theta=state(5);
 psi=state(6);
-x_b = [ 
-    cos(theta)*cos(psi); 
-    cos(theta)*sin(psi);
-    -sin(theta);
-    ];
 
-y_b = [
-    sin(phi)*sin(theta)*cos(psi) - cos(phi)*sin(psi); 
-    sin(phi)*sin(theta)*sin(psi) + cos(phi)*cos(psi);
-    sin(phi)*cos(theta)
-    ];
+%% get orientation
+Rb=R;%[x_b,y_b,z_b];
 
-z_b = [
-    cos(phi)*sin(theta)*cos(psi) + sin(phi)*sin(psi);
-    cos(phi)*sin(theta)*sin(psi) - sin(phi)*cos(psi);
-    cos(phi)*cos(theta);
-    ];
+% theta=-asin(Rb(3,1));
+% psi=reference(1,4,1);%atan2(Rb(2,1)/cos(theta),Rb(1,1)/cos(theta));
+z_b=Rb(:,3);
+%% get desired acceleration
+a_ref=reference(1,1:3,3);
+a_fb=data.K_pos*(reference(1,1:3,1)'-state(1:3))+data.K_vel*(reference(1,1:3,2)'-state(7:9));
+% a_fb=Rb'*a_fb;
+a_des=(a_fb'+a_ref)'+[0;0;data.g];
 
-Rb=[x_b,y_b,z_b];
 
 %% Get desired orientation
 if norm(a_des,2)==0    
@@ -48,11 +35,16 @@ R_des=[x_b_des,y_b_des,z_b_des]; %desired orientation
     extra.a_des=a_des;
 %% Get desired body angular rate    
     omega_ref=data.omega;
-    euler_des= [atan2(R_des(3,2),R_des(3,3)); atan2(-R_des(3,1),norm([R_des(3,2),R_des(3,3)],2)); atan2(R_des(2,1),R_des(1,1))];
+    
+    theta_des=-asin(R_des(3,1));
+    phi_des=atan2(R_des(3,2)/cos(theta_des),R_des(3,3)/cos(theta_des));
+    psi_des=atan2(R_des(2,1)/cos(theta_des),R_des(1,1)/cos(theta_des));
+   
+    euler_des=[phi_des;theta_des;psi_des];
+%     euler_des= [atan2(R_des(3,2),R_des(3,3)); -asin(R_des(3,1)); atan2(R_des(2,1),R_des(1,1))];
+%     euler_des2= [atan2(R_des(3,2),R_des(3,3)); atan2(-R_des(3,1),norm([R_des(3,2),R_des(3,3)],2)); atan2(R_des(2,1),R_des(1,1))];
     euler_error=(euler_des-state(4:6));
-    if sum(euler_error(euler_error>pi))||(sum(euler_error(euler_error<-pi)))
-        dummy=2;
-    end
+    
     euler_error(euler_error>pi)=euler_error(euler_error>pi)-2*pi;
     euler_error(euler_error<-pi)=euler_error(euler_error<-pi)+2*pi;
     
@@ -71,7 +63,7 @@ R_des=[x_b_des,y_b_des,z_b_des]; %desired orientation
     omega_dot_fb=data.K_omega*(omega_des-state(10:12));
     omega_dot_des=omega_dot_fb+omega_dot_ref;
     extra.omega_dot_des=omega_dot_des;
-
+    extra.R_des=R_des;
 %$ get desired torque:
 tau=data.I*omega_dot_des+(cross(state(10:12),data.I*state(10:12)));
 u=[c_cmd*data.m,tau'];
