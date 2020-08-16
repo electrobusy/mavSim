@@ -26,7 +26,7 @@ elseif strcmp(type,'B2E')
         c13, c23, c33;
         ];
     
-elseif strcmp(type,'B2I') % body to inertial ([omega_x ,omega_y,omega_z]-> [phi_dot, theta_dot, psi_dot])
+elseif strcmp(type,'B2I') % body to inertial ([omega_x ,omega_y,omega_z]-> [phi_dot, theta_dot, psi_dot]) from http://www.stengel.mycpanel.princeton.edu/Quaternions.pdf
     r11 = ones(1,1,length(theta));
     r12 = reshape(tan(theta).*sin(phi),[1,1,length(theta)]);
     r13 = reshape(tan(theta).*cos(phi),[1,1,length(theta)]);
@@ -43,18 +43,18 @@ elseif strcmp(type,'B2I') % body to inertial ([omega_x ,omega_y,omega_z]-> [phi_
     ];
 elseif strcmp(type,'I2B')
     r11 = ones(1,1,length(theta));
-    r12 = reshape(tan(theta).*sin(phi),[1,1,length(theta)]);
-    r13 = reshape(tan(theta).*cos(phi),[1,1,length(theta)]);
+    r12 = zeros(1,1,length(theta));
+    r13 = reshape(-sin(theta),[1,1,length(theta)]);
     r21 = zeros(1,1,length(theta));
     r22 = reshape(cos(phi),[1,1,length(theta)]);
-    r23 = reshape(-sin(phi),[1,1,length(theta)]);
+    r23 = reshape(sin(phi).*cos(theta),[1,1,length(theta)]);
     r31 = zeros(1,1,length(theta));
-    r32 = reshape(sin(phi)./cos(theta),[1,1,length(theta)]);
-    r33 = reshape(cos(phi)./cos(theta),[1,1,length(theta)]);
+    r32 = reshape(-sin(phi),[1,1,length(theta)]);
+    r33 = reshape(cos(phi).*cos(theta),[1,1,length(theta)]);
     T = [
-    r11, r21, r31;
-    r12, r22, r32;
-    r13, r23, r33;
+    r11, r12, r13;
+    r21, r22, r23;
+    r31, r32, r33;
     ];
 elseif strcmp(type,'E2V') %earth to velocity frame 
     c11=reshape(cos(psi),[1,1,length(psi)]);

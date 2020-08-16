@@ -11,7 +11,7 @@ theta=euler(2);
 psi=euler(3);
 vel=state(7:9);
 omega=state(10:12); %rotational rate in body frame
-Tbi=get_rotationmatrix([-1 -1 1].*euler','I2B');
+Tbi=get_rotationmatrix(euler','B2I');
 R=get_rotationmatrix(euler','B2E'); %transformation body to world isn't the same as Rb somehow
 
 % here i take a different take on transformations than the paper
@@ -41,14 +41,14 @@ omega_skew=[0, -omega(3), omega(2);
 % three different methods to go from body rotational rate to inertial rotational rate (i think dTheta3 is correct)
 % the symmetric skew matrix method is adapted from http://arxiv.org/abs/1712.02402 (at one point they take the matrix multiplication which leaves 3x3 matrix and at another point they seem to take the dot product which stays 0 if starting from 0 euler
 dTheta=Tbi*omega; %dphi dtheta dpsi (p,q,r)
-dTheta2=(dot(Rb,omega_skew))';
-dTheta3=Rb*omega_skew;
-dTheta3=[dTheta3(3,2);dTheta3(1,3);dTheta3(2,1)];%(dot(R,omega_skew))';    
-dTheta4=Rb*omega;
+% dTheta2=(dot(Rb,omega_skew))';
+% dTheta3=Rb*omega_skew;
+% dTheta3=[dTheta3(3,2);dTheta3(1,3);dTheta3(2,1)];%(dot(R,omega_skew))';    
+% dTheta4=Rb*omega;
 dpos=vel; 
 dvel=(1/data.m)*([0;0;-data.m*data.g]+(Rb*[0;0;u(1)])); %acceleration in world frame (NWU)
 Rdot=Rb*omega_skew;
-dx=[dpos; dTheta3; dvel; domega];
+dx=[dpos; dTheta; dvel; domega];
 
 
 end

@@ -2,6 +2,7 @@ function [u, extra] = controller(state,R,reference,data)
 phi=state(4);
 theta=state(5);
 psi=state(6);
+psi_ref=reference(1,4,1);
 
 %% get orientation
 Rb=R;%[x_b,y_b,z_b];
@@ -22,14 +23,16 @@ if norm(a_des,2)==0
 else
     z_b_des=a_des./norm(a_des,2);
 end
-y_c=[-sin(psi),cos(psi),0]';
+
+
+
+y_c=[-sin(psi_ref),cos(psi_ref),0]';
 x_b_des=cross(y_c,z_b_des);
 x_b_des=x_b_des./norm(x_b_des,2);
 y_b_des=cross(z_b_des,x_b_des);
 R_des=[x_b_des,y_b_des,z_b_des]; %desired orientation
 
 
-% test2=[atan2(Rb(3,2),Rb(3,3)); atan2(-Rb(3,1),norm([Rb(3,2),Rb(3,3)],2)); atan2(Rb(2,1),Rb(1,1))];
 %% Get normalized thrust command
     c_cmd=a_des'*z_b;
     extra.a_des=a_des;
@@ -50,11 +53,14 @@ R_des=[x_b_des,y_b_des,z_b_des]; %desired orientation
     
     %% using the inverse method of http://arxiv.org/abs/1712.02402 to convert from dTheta to domega
     d_Theta_fb=data.K_theta*euler_error; 
-    d_Theta_skew=[0, -d_Theta_fb(3), d_Theta_fb(2);
-                  d_Theta_fb(3), 0, -d_Theta_fb(1);
-                  -d_Theta_fb(2), d_Theta_fb(1),0];
-    omega_fb_skew=Rb'*d_Theta_skew;
-    omega_fb=[omega_fb_skew(3,2);omega_fb_skew(1,3);omega_fb_skew(2,1)];
+%     d_Theta_skew=[0, -d_Theta_fb(3), d_Theta_fb(2);
+%                   d_Theta_fb(3), 0, -d_Theta_fb(1);
+%                   -d_Theta_fb(2), d_Theta_fb(1),0];
+%     omega_fb_skew=Rb'*d_Theta_skew;
+%     omega_fb=[omega_fb_skew(3,2);omega_fb_skew(1,3);omega_fb_skew(2,1)];
+    Tbi=get_rotationmatrix(state(4:6)','I2B');
+    omega_fb=Tbi*d_Theta_fb;
+    
     omega_des=omega_ref+omega_fb;
     extra.omega_des=omega_des;
     extra.euler_des=euler_des;

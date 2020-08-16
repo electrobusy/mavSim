@@ -6,15 +6,19 @@
 % to another using a 6-th order polynomial
 
 clc,
-clear all,
+% clear all,
 close all
+if not(exist('plotflag','var'))
+    plotflag = 1; 
+end
+
 
 % -- keyframes = [x y z psi]' (where x, y, z and psi are column vectors)
 keyframes = [
         0,0,0,0     ;
-        4,0,5,0;
-        5,0,5,0;
-        7,2,5,0
+        4,0,5,-0.5*pi;
+        5,0,5,0.5*pi;
+        7,2,5,pi
     ]';
 
 % -- number of keyframes: 
@@ -240,7 +244,7 @@ end
 
 
 
-if 1
+if plotflag
 % -- plot x
 figure();
 subplot(3,2,[1 2])

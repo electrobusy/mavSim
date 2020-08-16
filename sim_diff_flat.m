@@ -1,7 +1,7 @@
 %% get trajectory
 clear all
 
-plotflag=0;
+plotflag=1; % plotflag to show minimum snap result
 close all
 
 if not(exist('poly_coeffs','var'))
@@ -24,7 +24,7 @@ clearvars -except poly_coeffs keyframes t
     data.B=zeros(3);%   rotational rotation drag B*omega 
     
     data.rotorcontrol=0;    
-    data.K_pos=eye(3).*[0.5,0.5,0.5]; %position error to desired acceleration  %set to zero for debugging the controller 
+    data.K_pos=eye(3).*[2,2,2]; %position error to desired acceleration  %set to zero for debugging the controller 
     data.K_vel=eye(3).*[0.3,0.3,0.3];  %velocity error to acceleration
 %     data.K_acc=eye(3).*[0;0;0];
     data.K_theta=eye(3).*[10;10;10]; %angle to omega
@@ -44,8 +44,8 @@ end
 
 
 %% Simulate 
-state_0=[keyframes(1:3,1); 0;0;0; 0;0;0;extra.omega(1,:)']; % [pos, R,V, omega];  %for perfect feedforward control there should be a nonzero initial angular rate
-% state x = [x,y,z,phi,theta,psi,xdot,ydot,zdot,omega_x,omega_y,omega_z]^T 
+state_0=[keyframes(1:3,1); 0;0;0; 0;0;0; 0;0;0]%extra.omega(1,:)']; % [pos, R,V, omega]; % note that minimum snap optimizer doesn't assume zero initial rotational rate
+% state x = [x,y,z,phi,theta,psi,xdot,ydot,zdot,omega_x,omega_y,omega_z]^T              %therefore, to test pure feedforward control omega_0 must be extra.omega(1,:);    
 dt=mean(diff(t));
 state=state_0;
 statel=zeros(size(state,1),length(t)+1);
@@ -93,6 +93,7 @@ end
 
 %% plotting
 % close all
+
 r2d=180/pi;
 figure()
 plot3(statel(1,:),statel(2,:),statel(3,:))
@@ -114,7 +115,7 @@ title("NWU frame")
 grid on  
 axis equal
 
-figure()
+figure('Position',[-1920,0,1200,1080]) %% Position is set up for 2 monitors here. Just remove it if the plots do not show up (also in the figure()'s below)
 subplot(431)
 plot(t,statel(4,1:end-1)*r2d)
 hold on 
@@ -231,7 +232,7 @@ grid on
 
 
 
-figure()
+figure('Position',[-720,0,720,1080])
 subplot(2,3,1)
 plot(t,statel(1,1:end-1));
 hold on 
@@ -275,7 +276,7 @@ title('vz')
 grid on 
 
 
-
+if 0
 figure()
 subplot(141)
 plot(t,u(:,1));
@@ -296,7 +297,7 @@ subplot(144)
 plot(t,u(:,4));
 grid on
 title("\tau\_z [Nm]") 
-
+end
 omega_z2=[extra.omega(1,3)];
 for i = 1:size(extra.omega_dot,1)
     az=extra.omega_dot(i,3);
