@@ -19,7 +19,7 @@ for i=1:(m-1) %loop over number of sections between keyframes
    %% Equality constraints (x=keyframe, [dx=0, ddx=0 (for begin and end caps)] 
    A_p_i=[
        polyval_terms(x,t(i)); 
-       polyval_terms(x,t(i+1));];
+       polyval_terms(x,t(i+1))];
    b_p_eq=[b_p_eq;
        keyframes(j,i);
        keyframes(j,i+1)];     
