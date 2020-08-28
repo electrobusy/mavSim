@@ -39,16 +39,19 @@ function [time,u, coeffs,extra,out] = get_inputs_Diff_Flatness(coeffs,T,data)
     %don't forget to remove coeffs
 %     coeffs=zeros(poly_order,nr_states,nr_wp-1,nr_derivative+1);
 %     coeffs(:,:,:,1)=randn(poly_order,nr_states,nr_wp-1,1); %polynomial coefficients [coefficientss,state (x,y,z,psi), nr sections,(nth-1 derivative)]
-    if 0  %no longer necessary since:    
-    multiplier=repmat((1:1:size(coeffs,1)-1)',[1,size(coeffs,[2,3])]); % used to multiply the coefficient with the corresponding power when differentiating
-        for n = 1:nr_derivative
-        coeffs([1:size(coeffs,1)-1],:,:,n+1)=coeffs(2:size(coeffs,1),:,:,n).*multiplier; %calculate coefficients of derivatives and shift so that the index corresponds with power-1
-        end
+%     if isfield(data,'anoosh')  %no longer necessary since:    
+%     multiplier=repmat((1:1:size(coeffs,1)-1)',[1,size(coeffs,[2,3])]); % used to multiply the coefficient with the corresponding power when differentiating
+%         for n = 1:nr_derivative
+%         coeffs([1:size(coeffs,1)-1],:,:,n+1)=coeffs(2:size(coeffs,1),:,:,n).*multiplier; %calculate coefficients of derivatives and shift so that the index corresponds with power-1
+%         end
+%     end
+% 
+    if isfield(data,'anoosh') %anoosh's code already discretizes his polynomials (and he uses a different polynomial format which makes it a pain to discretize the coefficients ourselfs
+        time=data.disc.time;
+        out=data.disc.disc;
+    else
+    [time,out]=discretize_poly(coeffs,T,data); % dimension out: [polynomial outputs for ti,state,derivative-1]
     end
-
-
-    [time,out]=discretize_poly(coeffs,T,data.dt); % dimension out: [polynomial outputs for ti,state,derivative-1]
-                                      
 
     %% get u1 (collective thrust) 
     % thrust is simply derived from m*r_dot_dot=-m*g*z_w+u1*zb

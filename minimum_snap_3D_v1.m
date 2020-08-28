@@ -28,11 +28,14 @@ keyframes = [
 n = 6; % choose order 
 
 % -- total time: 
-t_m = 5; % [sec]
+% t_m = 5; % [sec]
 
 % -- vector of times:
 % t = [0, 3, t_m]; % [t_0, t_1, ..., t_m]
-t=linspace(0,t_m,size(keyframes,2));
+t=linspace(0,10,size(keyframes,2));
+% t=[0,5,20,30];
+t=[0,7,12,15];
+t_m=t(end);
 % t_vec = t(2:end-1); % [t_1, ..., t_{m-1}]
 
 % -- derivatives to minimize: 
@@ -151,8 +154,9 @@ end
 % H = blkdiag(H_x,H_x,H_y,H_y,H_z,H_z,H_psi,H_psi);
 
 % -- Solves quadratic programming problem: 
+options=optimoptions('quadprog','Algorithm','interior-point-convex','ConstraintTolerance',1e-8,'MaxIterations',5000,'StepTolerance',1e-12);
 f = zeros(size(A_eq,2),1);
-sol = quadprog(H,f,[],[],A_eq,b_eq);
+[sol,cost,fl,output] = quadprog(H,f,[],[],A_eq,b_eq,[],[],[],options);
 
 % -- Plots:
 dt = 0.01;
